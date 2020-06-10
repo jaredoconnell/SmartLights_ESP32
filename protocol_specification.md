@@ -5,13 +5,48 @@
 ---
 ## Data types:
 
-#### All data types:
-A single byte specifying length (0-255)\
-Followed by up to 255 bytes of payload.
 
 #### Array
 A single byte specifying number of items in the array (0-255)
 Followed by all of the data values.
+
+A string is a simple char array and follows the same format.
+
+#### IDs
+A single byte if the practical limit is 255. Else two bytes.
+
+#### Colors
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | One byte | Red |
+| 1 | One byte | Green |
+| 2 | One byte | Blue |
+
+#### Color Sequences
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The color sequence ID |
+| 2 | One byte. | The number of items in the sequence. Max 255 |
+| n * 3 + 3 | Three bytes. | The color |
+| n * 3 + 6 | One byte. | The brightness. |
+| n * 3 + 7 | Two bytes. | The sustain time. Can be left out if there is only one color. |
+| n * 3 + 9 | One byte. | The transition type ID |
+| n * 3 + 10 | Two bytes. | The transition time |
+Note: n starts at 0.
+
+The number of bytes in the sequence is 3 + n * 10. If there are about 10 other bytes in the packet for other things, the practical limit for a single packet is 54 items in the sequence.
+
+#### LED Strip
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The ID of the color strip |
+| 2 | One byte. | The number of colors in the LED strip (typically 1 to 5). <br>Should not exceed 100 (though I cannot see why anyone would do that). |
+| n * 5 + 3 | One byte. | The controller ID |
+| n * 5 + 4 | One byte. | The index of the controller pin |
+| n * 5 + 5 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
+| N * 5 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
+
+For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 28 bytes long. That means, with overhead, it is realistic to pack about 17 LED strips into a single packet.
 
 ---
 
@@ -28,74 +63,142 @@ Packet ID: 0
 ---
 ### From phone to ESP32:
 
-Packet name: Get PWM Drivers\
+Packet name: **Get PWM Drivers**\
 Packet ID: 1\
 Data: None
 
-Packet name: Get LED Strips\
+Packet name: **Get LED Strips**\
 Packet ID: 2\
 Data: None
 
-Packet name: Add PWM Driver\
+Packet name: **Add PWM Driver**\
 Packet ID: 3\
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | One byte | The i2c address of the PWM driver. |
 
-Packet name: Remove PWM Driver\
+Packet name: **Remove PWM Driver**\
 Packet ID: 4\
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | One byte | The i2c address of the PWM driver. |
 
-Packet name: Add LED Strip\
+Packet name: **Add LED Strip**\
 Packet ID: 5 \
-Data: TODO
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Many bytes | The LED Strip object (as defined in the data types section)
 
-Packet name: Remove LED Strip \
+Packet name: **Remove LED Strip** \
 Packet ID: 6 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | LED Strip ID |
 
-Packet name: Add Colors Sequence to pallet \
-Packet ID: 7 \
-Data: TODO
-
-Packet name: Set LED Strip Color Sequence \
+Packet name: **Add Color Sequence** \
 Packet ID: 8 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | One byte | Overwrite boolean.<br>1 if it should overwrite the old ID at this value<br>0 if it should send an error response. |
+| 1 | 7 or more | The color sequence (as defined in the data types section) |
 
-Packet name: Schedule LED Strip Sequence Change \
+Packet name: **Set LED Strip Color Sequence** \
 Packet ID: 9 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The Color Strip ID |
+| 2 | Two bytes | The Color Sequence ID |
 
-Packet name: Get Color Pallet \
+Packet name: **Schedule LED Strip Sequence Change** \
 Packet ID: 10 \
 Data: TODO
 
-Packet name: Get Color Sequences \
+Packet name: **Get Color Sequence ID for LED Strip** \
 Packet ID: 11 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The Color Strip ID |
 
-Packet name: Get Scheduled Sequences \
+Packet name: **Get Color Sequences** \
 Packet ID: 12 \
-Data: TODO
+Data: None
+
+Packet name: **Get Scheduled Sequences** \
+Packet ID: 13 \
+Data: None
+
+Packet name: **Get Version Number** \
+Packet ID: 14 \
+Data: None
+
+Packet name: **Get Protocol ID** \
+Packet ID: 14 \
+Data: None
+
 
 ---
 ### From ESP32 to phone:
 
 
-Packet name: PWM Drivers List Response \
+Packet name: **PWM Drivers List Response** \
 Packet ID: 255 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | One byte | Number of PWM drivers |
+| n | One byte | The PWM driver address(es) |
 
-Packet name: LED Strips List Response \
+Packet name: **LED Strips List Response** \
 Packet ID: 254 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The number of LED strips |
+| 2 | Two bytes | The offset for this packet |
+| 4 | One byte | The number of LED strips being sent in this packet |
+| * + 4 | Many bytes | The LED strip data sequentially (as defined in the data types section) |
 
-Packet name: Color Pallet List Response \
-Packet ID: 253 \
-Data: TODO
+This is one that can easily exceed the packet size, so it is designed to be sent in multiple packets.
 
-Packet name: Color Sequences List Response \
+Packet name: **Color Sequence for LED Strip Response** \
 Packet ID: 252 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The color sequence for that LED strip |
+
+
+Packet name: **Color Sequence List Response** \
+Packet ID: 251 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The number of Color Sequences |
+| 2 | Two bytes | The offset for this packet |
+| 4 | One byte | The number of Color Sequences being sent in this packet |
+| * + 4 | Many bytes | The Color Sequences data sequentially (as defined in the data types section) |
+
+Packet name: **Scheduled Sequences List Response** \
+Packet ID: 250 \
 Data: TODO
 
-Packet name: Scheduled Sequences List Response \
-Packet ID: 251 \
+
+Packet name: **Version Number Response** \
+Packet ID: 249 \
 Data: TODO
+
+Packet name: **Protocol Version Response** \
+Packet ID: 248 \
+Data: TODO
+
+
+
+The version number gets updated every time something changes.
+If the version number is greater than it was last time, the phone should query for changes.
+If the version number is less than it was last time, it means the old data was lost. The user should be prompted asking if the phone should re-sync the data.
