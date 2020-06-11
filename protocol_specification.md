@@ -25,13 +25,14 @@ A single byte if the practical limit is 255. Else two bytes.
 #### Color Sequences
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The color sequence ID |
+| 0 | Two bytes. | The color sequence ID |
 | 2 | One byte. | The number of items in the sequence. Max 255 |
-| n * 3 + 3 | Three bytes. | The color |
-| n * 3 + 6 | One byte. | The brightness. |
-| n * 3 + 7 | Two bytes. | The sustain time. Can be left out if there is only one color. |
-| n * 3 + 9 | One byte. | The transition type ID |
-| n * 3 + 10 | Two bytes. | The transition time |
+| 3 | One byte. | The sequence type (in this case, 0) |
+| 4 | Two bytes. | The sustain time |
+| 6 | Two bytes | The transition time |
+| 8 | One byte. | The transition type ID |
+| n * 4 + 9 | Three bytes. | The color |
+| n * 4 + 12 | One byte. | The brightness. |
 Note: n starts at 0.
 
 The number of bytes in the sequence is 3 + n * 10. If there are about 10 other bytes in the packet for other things, the practical limit for a single packet is 54 items in the sequence.
