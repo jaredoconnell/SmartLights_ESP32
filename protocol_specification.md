@@ -28,22 +28,22 @@ A single byte if the practical limit is 255. Else two bytes.
 | 0 | Two bytes | The color sequence ID |
 | 2 | One byte | The number of items in the sequence. Max 255 |
 | 3 | One byte | The sequence type (in this case, 0) |
-| 4 | Two bytes | The sustain time |
-| 6 | Two bytes | The transition time |
+| 4 | Two bytes | The sustain time (in 60ths of a second) |
+| 6 | Two bytes | The transition time (in 60ths of a second) |
 | 8 | One byte | The transition type ID |
-| 9 | One byte | The brightness of the sequence |
-| n * 3 + 10 | Three bytes. | The color |
+| n * 3 + 9 | Three bytes. | The color |
+| N * 5 | Up to 30 | Name of the color sequence as a char array up to 29 characters. |
 Note: n starts at 0.
 
-The number of bytes in the sequence is 10 + n * 3. If there are about 10 other bytes in the packet for other things, the practical limit for a single packet is 54 items in the sequence.
+The number of bytes in the sequence is 9 + n * 3. If there are about 10 other bytes in the packet for other things, the practical limit for a single packet is 54 items in the sequence.
 
 #### LED Strip
 | Index | Size | Data Details |
 | --- | --- | --- |
 | 0 | Two bytes | The ID of the color strip |
 | 2 | One byte. | The number of colors in the LED strip (typically 1 to 5). <br>Should not exceed 100 (though I cannot see why anyone would do that). |
-| n * 5 + 3 | One byte. | The controller ID |
-| n * 5 + 4 | One byte. | The index of the controller pin |
+| n * 5 + 3 | One byte. | The driver ID |
+| n * 5 + 4 | One byte. | The index of the driver pin |
 | n * 5 + 5 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
 | N * 5 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
 

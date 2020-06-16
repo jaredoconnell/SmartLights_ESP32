@@ -21,147 +21,117 @@
 */
 #include <cstdlib>
 
-// BLE
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
 
 // PWM
 #include <Wire.h>
-#include <Adafruit_PWMServoDriver.h>
 
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+#include "Packet.h"
+#include "Controller.h"
+#include "BluetoothReceiver.h"
 
-BLECharacteristic *pCharacteristic;
-bool deviceConnected = false;
-float txValue = 0;
+// TEST CASE
+#include "LEDStrip.h"
+#include "Color.h"
+#include "ColorSequence.h"
 
-//std::string rxValue; // Could also make this a global var to access it in loop()
+// Controller
+Controller controller;
+// Bluetooth
+BluetoothReceiver bluetooth(controller);
 
-// See the following for generating UUIDs:
-// https://www.uuidgenerator.net/
+// TIMER
+volatile int interruptCounter;
+int totalInterruptCounter;
 
-// NOTE: These NEED to be uppercase.
-#define SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
-#define CHARACTERISTIC_UUID_RX "6EED7E34-9F2A-4F0F-B1D6-70CD04E8E581"
-#define CHARACTERISTIC_UUID_TX "1CF8D309-11A3-46FB-9378-9AFFF7DCE3B4"
+hw_timer_t * timer = NULL;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+ 
+void IRAM_ATTR onTimer() {
+  portENTER_CRITICAL_ISR(&timerMux);
+  interruptCounter++;
+  portEXIT_CRITICAL_ISR(&timerMux);
+}
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-    };
+void testLoop() {
+  // TEST CASE:
+  Adafruit_PWMServoDriver * driver = controller.addPWMDriver(64);
+  LEDStripComponent ** components = new LEDStripComponent*[4];
+  components[0] = new LEDStripComponent(driver, 0, new Color(255, 0, 0));
+  components[1] = new LEDStripComponent(driver, 1, new Color(0, 255, 0));
+  components[2] = new LEDStripComponent(driver, 2, new Color(0, 0, 255));
+  components[3] = new LEDStripComponent(driver, 3, new Color(255, 245, 230));
+  LEDStrip * strip = new LEDStrip(0, 4, components, "Test");
 
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-    }
-};
-
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
-
-      if (rxValue.length() > 0) {
-        Serial.println("*********");
-        Serial.print("Received Value: ");
-
-        for (int i = 0; i < rxValue.length(); i++) {
-          Serial.print(rxValue[i]);
-        }
-
-        Serial.println();
-
-        // Do stuff based on the command received from the app
-        if(rxValue.length() > 1) {
-          int channel = atoi(rxValue.substr(0,1).c_str());
-          pwm.setPWM(channel, 0, atoi(rxValue.substr(1).c_str()));
-        } else {
-          
-        }
-
-        Serial.println();
-        Serial.println("*********");
-      }
-    }
-};
+  std::vector<Color *> colors;
+  Color * red = new Color(255, 0, 0);
+  Color * green = new Color(0, 255, 0);
+  Color * blue = new Color(0, 0, 255);
+  Color * white = new Color(255, 255, 255);
+  Color * cyan = new Color(0, 255, 255);
+  Color * magenta = new Color(255, 0, 255);
+  Color * lightGreen = new Color(180, 255, 180);
+  colors.push_back(red);
+  colors.push_back(green);
+  colors.push_back(blue);
+  colors.push_back(white);
+  colors.push_back(cyan);
+  colors.push_back(magenta);
+  colors.push_back(lightGreen);
+  ColorSequence * colorSeq = new ColorSequence(0, colors, 0, 60, 0);
+  strip->setColorSequence(colorSeq);
+  controller.addColorSequence(colorSeq);
+  controller.addLEDStrip(strip);
+  Serial.println("Added color sequence and LED strip");
+}
 
 void setup() {
   Serial.begin(115200);
 
-  // Setup PWM board
-  pwm.reset();
-
-  pwm.begin();
-  // In theory the internal oscillator is 25MHz but it really isn't
-  // that precise. You can 'calibrate' by tweaking this number till
-  // you get the frequency you're expecting!
-  pwm.setOscillatorFrequency(27000000);  // The int.osc. is closer to 27MHz
-  pwm.setPWMFreq(1600);  // This is the maximum PWM frequency
-
+  timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(timer, &onTimer, true);
+  timerAlarmWrite(timer, 16666, true);
+  timerAlarmEnable(timer);
+  
   // if you want to really speed stuff up, you can go into 'fast 400khz I2C' mode
   // some i2c devices dont like this so much so if you're sharing the bus, watch
   // out for this!
   Wire.setClock(400000);
-  for(int i = 0; i < 16; i++)
-    pwm.setPWM(i, 0, 0);
 
-  // Create the BLE Device
-  BLEDevice::init("LEDs"); // Give it a name
-
-  // Create the BLE Server
-  BLEServer *pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
-
-  // Create the BLE Service
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-  // Make it possible to find this device based on the UUID.
-  pServer->getAdvertising()->addServiceUUID(SERVICE_UUID);
-
-  // Create a BLE Characteristic
-  pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID_TX,
-                      BLECharacteristic::PROPERTY_NOTIFY
-                    );
-                      
-  pCharacteristic->addDescriptor(new BLE2902());
-
-  BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID_RX,
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );
-
-  pCharacteristic->setCallbacks(new MyCallbacks());
-
-  // Start the service
-  pService->start();
-
-  // Start advertising
-  pServer->getAdvertising()->start();
-  Serial.println("Waiting a client connection to notify...");
+  bluetooth.init();
 }
 
 void loop() {
-  if (deviceConnected) {
-
-    // NOTE: Max packet size is 20 bytes!
-    std::string strToSend = "It worked! abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    pCharacteristic->setValue(strToSend);
+  if (interruptCounter > 0) {
+    portENTER_CRITICAL(&timerMux);
+    interruptCounter--;
+    portEXIT_CRITICAL(&timerMux);
+ 
+    totalInterruptCounter++;
+    controller.onTick(totalInterruptCounter);
+    bluetooth.onTick(totalInterruptCounter);
     
-    pCharacteristic->notify(); // Send the value to the app!
-    Serial.println("*** Sent Value ***");
-
-    // You can add the rxValue checks down here instead
-    // if you set "rxValue" as a global var at the top!
-    // Note you will have to delete "std::string" declaration
-    // of "rxValue" in the callback function.
-//    if (rxValue.find("A") != -1) { 
-//      Serial.println("Turning ON!");
-//      digitalWrite(LED, HIGH);
-//    }
-//    else if (rxValue.find("B") != -1) {
-//      Serial.println("Turning OFF!");
-//      digitalWrite(LED, LOW);
-//    }
+    /*Serial.println("Loop");
+    if (deviceConnected) {
+  
+      // NOTE: Max packet size is 20 bytes!
+      std::string strToSend = "It worked! abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      pCharacteristic->setValue(strToSend);
+      
+      pCharacteristic->notify(); // Send the value to the app!
+      Serial.println("*** Sent Value ***");
+  
+      // You can add the rxValue checks down here instead
+      // if you set "rxValue" as a global var at the top!
+      // Note you will have to delete "std::string" declaration
+      // of "rxValue" in the callback function.
+  //    if (rxValue.find("A") != -1) { 
+  //      Serial.println("Turning ON!");
+  //      digitalWrite(LED, HIGH);
+  //    }
+  //    else if (rxValue.find("B") != -1) {
+  //      Serial.println("Turning OFF!");
+  //      digitalWrite(LED, LOW);
+  //    }
+    }*/
   }
-  delay(1000);
 }
