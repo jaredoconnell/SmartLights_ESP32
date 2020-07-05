@@ -8,6 +8,11 @@ class Color {
     Color(unsigned char red, unsigned char green, unsigned char blue)
       : red(red), green(green), blue(blue)
     {}
+
+    
+    Color(Color * other)
+      : Color(other->red, other->green, other->blue)
+    {}
   
     unsigned char getRed() { return red; }
     unsigned char getGreen() { return green; }

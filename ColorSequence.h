@@ -2,6 +2,7 @@
 #define COLORSEQUENCE_H
 
 #include <vector>
+#include <memory>
 #include "Color.h"
 
 class ColorSequence {
@@ -15,12 +16,12 @@ class ColorSequence {
     int totalCycleTime;
     std::vector<Color*> colors;
 
-    Color * currentColor;
+    std::shared_ptr<Color> currentColor;
   public:
     ColorSequence(int id, std::vector<Color*> colors, int sustainTime, int transitionTime, int transitionTypeID);
     int getID();
 
     void updateCurrentColor(int frames);
-    Color * getCurrentColor();
+    std::shared_ptr<Color> getCurrentColor();
 };
 #endif

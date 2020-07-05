@@ -25,9 +25,8 @@
 // PWM
 #include <Wire.h>
 
-#include "Packet.h"
+#include "ReceivedPackets.h"
 #include "Controller.h"
-#include "BluetoothReceiver.h"
 
 // TEST CASE
 #include "LEDStrip.h"
@@ -36,8 +35,6 @@
 
 // Controller
 Controller controller;
-// Bluetooth
-BluetoothReceiver bluetooth(controller);
 
 // TIMER
 volatile int interruptCounter;
@@ -56,10 +53,10 @@ void testLoop() {
   // TEST CASE:
   Adafruit_PWMServoDriver * driver = controller.addPWMDriver(64);
   LEDStripComponent ** components = new LEDStripComponent*[4];
-  components[0] = new LEDStripComponent(driver, 0, new Color(255, 0, 0));
-  components[1] = new LEDStripComponent(driver, 1, new Color(0, 255, 0));
-  components[2] = new LEDStripComponent(driver, 2, new Color(0, 0, 255));
-  components[3] = new LEDStripComponent(driver, 3, new Color(255, 245, 230));
+  components[0] = new LEDStripComponent(driver, 64, 0, new Color(255, 0, 0));
+  components[1] = new LEDStripComponent(driver, 64, 1, new Color(0, 255, 0));
+  components[2] = new LEDStripComponent(driver, 64, 2, new Color(0, 0, 255));
+  components[3] = new LEDStripComponent(driver, 64, 3, new Color(255, 245, 230));
   LEDStrip * strip = new LEDStrip(0, 4, components, "Test");
 
   std::vector<Color *> colors;
@@ -97,7 +94,7 @@ void setup() {
   // out for this!
   Wire.setClock(400000);
 
-  bluetooth.init();
+  controller.init();
 }
 
 void loop() {
@@ -108,7 +105,6 @@ void loop() {
  
     totalInterruptCounter++;
     controller.onTick(totalInterruptCounter);
-    bluetooth.onTick(totalInterruptCounter);
     
     /*Serial.println("Loop");
     if (deviceConnected) {

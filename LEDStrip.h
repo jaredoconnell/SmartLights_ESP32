@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 
 class Color;
 class ColorSequence;
@@ -12,13 +13,15 @@ class Adafruit_PWMServoDriver;
 class LEDStripComponent {
   private:
     Adafruit_PWMServoDriver * driver;
+    uint8_t addr;
     uint8_t pin;
-    Color * color;
+    std::shared_ptr<Color> color;
   public:
-    LEDStripComponent(Adafruit_PWMServoDriver * driver, uint8_t pin, Color * color);
+    LEDStripComponent(Adafruit_PWMServoDriver * driver, uint8_t driverAddr, uint8_t pin, Color * color);
     Adafruit_PWMServoDriver * getDriver();
+    uint8_t getDriverAddr();
     uint8_t getPin();
-    Color * getColor();
+    std::shared_ptr<Color> getColor();
 
     /**
      * A value betwen 0 and 4095.
@@ -41,7 +44,7 @@ class LEDStrip {
     std::string name;
 
     // Current state
-    Color * currentColor = nullptr;
+    std::shared_ptr<Color> currentColor;
     int currentBrightness = 4095;
     ColorSequence * colorSequence = nullptr;
 

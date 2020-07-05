@@ -1,9 +1,11 @@
-#include "Packet.h"
+#include "ReceivedPackets.h"
 
 #include "Color.h"
 #include "ColorSequence.h"
 #include "Controller.h"
 #include "LEDStrip.h"
+#include "SendablePackets.h"
+
 // Send debug messages
 #include <HardwareSerial.h>
 
@@ -21,7 +23,9 @@ GetPWMPacket::GetPWMPacket(Controller & controller)
 
 void GetPWMPacket::parse(std::string &data) {
     Serial.println("Got packet get pwm driver");
-    // TODO
+    SendDriverDataPacket * response = new SendDriverDataPacket(controller);
+    controller.queuePacket(response);
+    Serial.println("Done");
 }
 
 // ---------------------------------------------------- //
@@ -31,7 +35,8 @@ GetLEDStripsPacket::GetLEDStripsPacket(Controller & controller)
 {}
 void GetLEDStripsPacket::parse(std::string &data) {
     Serial.println("Got packet get led strips");
-    // TODO
+    controller.sendLEDStrips();
+    Serial.println("Done");
 }
 
 // ---------------------------------------------------- //
@@ -75,7 +80,7 @@ void AddLEDStripPacket::parse(std::string &data) {
     }
     Color * color = new Color(red, green, blue);
     
-    LEDStripComponent * component = new LEDStripComponent(driver, driverPin, color);
+    LEDStripComponent * component = new LEDStripComponent(driver, driverID, driverPin, color);
 
     components[i] = component;
   }
@@ -137,6 +142,17 @@ void AddColorSequencePacket::parse(std::string &data) {
     ColorSequence * colorSeq = new ColorSequence(sequenceID, colors, sustainTime, transitionTime, transitionType);
     controller.addColorSequence(colorSeq);
 }
+
+// ---------------------------------------------------- //
+
+GetColorSequencesPacket::GetColorSequencesPacket(Controller & controller)
+  : controller(controller)
+{}
+void GetColorSequencesPacket::parse(std::string &data) {
+    Serial.println("Got packet get color sequences strips");
+    // TODO
+}
+
 
 // ---------------------------------------------------- //
 

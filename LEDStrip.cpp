@@ -10,7 +10,7 @@ LEDStrip::LEDStrip(int id, int numColors, LEDStripComponent ** components, std::
   : id(id), numColors(numColors), components(components), name(name)
 {
   for (int i = 0; i < numColors; i++) {
-    Color * color = components[i]->getColor();
+    std::shared_ptr<Color> color = components[i]->getColor();
     if (color->hasWhite()) {
       int diff = color->getRed() - color->getBlue();
       whiteComponents[diff] = components[i];
@@ -42,6 +42,7 @@ int abs(int a) {
 }
 
 void LEDStrip::displayColor(Color * color) {
+  heap_caps_check_integrity_addr((intptr_t) color, true);
   // So we have been given an RGB value
   // We also have the list of all colors in this LED strip.
   // From the available colors, we need to determine the most
@@ -110,7 +111,7 @@ void LEDStrip::updateLEDStripComponent(int &red, int &green, int &blue, LEDStrip
 
   // Test case: Red LED strip, but you need to display blue.
 
-  Color * componentColor = component->getColor();
+  std::shared_ptr<Color> componentColor = component->getColor();
 
   int brightnessToMatchRed = componentColor->getRed() > 0 ? 255 * red / componentColor->getRed() : 4095;
   int brightnessToMatchGreen = componentColor->getGreen() > 0 ? 255 * green / componentColor->getGreen() : 4095;
@@ -149,11 +150,11 @@ void LEDStrip::setColorSequence(ColorSequence * colorSequence) {
 
 void LEDStrip::update(int tick) {
   if (colorSequence != nullptr) {
-    Color * color = colorSequence->getCurrentColor();
-    if (color != nullptr && (currentColor == nullptr || !color->equals(currentColor))) {
+    std::shared_ptr<Color> color = colorSequence->getCurrentColor();
+    if (color && (!currentColor || !color->equals(currentColor.get()))) {
       currentColor = color;
 
-      displayColor(currentColor);
+      displayColor(currentColor.get());
     }
   } else {
     flash(tick);
@@ -163,7 +164,7 @@ void LEDStrip::update(int tick) {
 void LEDStrip::flash(int tick) {
   int brightness;
   if (tick % 120 < 60) {
-    brightness = 2000;
+    brightness = 300;
   } else {
     brightness = 0;
   }
@@ -177,17 +178,20 @@ void LEDStrip::flash(int tick) {
 // -- LED Strip Component -- //
 // ------------------------- //
 
-LEDStripComponent::LEDStripComponent(Adafruit_PWMServoDriver * driver, uint8_t pin, Color * color)
-  : driver(driver), pin(pin), color(color)
+LEDStripComponent::LEDStripComponent(Adafruit_PWMServoDriver * driver, uint8_t driverAddr, uint8_t pin, Color * color)
+  : driver(driver), pin(pin), color(color), addr(driverAddr)
 {}
 
 Adafruit_PWMServoDriver * LEDStripComponent::getDriver() {
   return driver;
 }
+uint8_t LEDStripComponent::getDriverAddr() {
+  return addr;
+}
 uint8_t LEDStripComponent::getPin() {
   return pin;
 }
-Color * LEDStripComponent::getColor() {
+std::shared_ptr<Color> LEDStripComponent::getColor() {
   return color;
 }
 void LEDStripComponent::setBrightness(int brightness) {

@@ -51,6 +51,14 @@ class AddColorSequencePacket : public ReceivedPacket {
     virtual void parse(std::string &);
 };
 
+class GetColorSequencesPacket : public ReceivedPacket {
+  private:
+    Controller & controller;
+  public:
+    GetColorSequencesPacket(Controller & controller);
+    virtual void parse(std::string &);
+};
+
 class SetLEDStripColorSequencePacket : public ReceivedPacket {
   private:
     Controller & controller;
