@@ -153,7 +153,7 @@ Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
 | 0 | One byte | Number of PWM drivers |
-| n | One byte | The PWM driver address(es) |
+| n | One byte per | The PWM driver address(es) |
 
 Packet name: **LED Strips List Response** \
 Packet ID: 254 \
@@ -163,7 +163,7 @@ Data:
 | 0 | Two bytes | The number of LED strips |
 | 2 | Two bytes | The offset for this packet |
 | 4 | One byte | The number of LED strips being sent in this packet |
-| * + 4 | Many bytes | The LED strip data sequentially (as defined in the data types section) |
+| * + 5 | Many bytes | The LED strip data sequentially (as defined in the data types section) |
 
 This is one that can easily exceed the packet size, so it is designed to be sent in multiple packets.
 

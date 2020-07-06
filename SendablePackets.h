@@ -6,6 +6,7 @@
 class Controller;
 class Color;
 class LEDStrip;
+class ColorSequence;
 
 class SendablePacket {
   protected:
@@ -13,6 +14,7 @@ class SendablePacket {
     std::string shortToStr(int val);
     std::string colorToStr(Color * color);
     std::string ledStripToStr(LEDStrip * strip);
+    std::string colorSequenceToStr(ColorSequence *);
   public:
     SendablePacket(Controller & controller);
     virtual std::string getData() = 0;

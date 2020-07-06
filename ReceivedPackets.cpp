@@ -138,8 +138,12 @@ void AddColorSequencePacket::parse(std::string &data) {
       colors.push_back(new Color(red, green, blue));
     }
     Serial.print("Added colors: ");
-    Serial.println(colors.size());
-    ColorSequence * colorSeq = new ColorSequence(sequenceID, colors, sustainTime, transitionTime, transitionType);
+    Serial.println(numItems);
+
+    int stringArrOffset = numItems * 3 + 10;
+    int nameLength = data[stringArrOffset];
+    std::string name = data.substr(stringArrOffset + 1, nameLength);
+    ColorSequence * colorSeq = new ColorSequence(sequenceID, colors, sustainTime, transitionTime, transitionType, name);
     controller.addColorSequence(colorSeq);
 }
 
@@ -150,7 +154,8 @@ GetColorSequencesPacket::GetColorSequencesPacket(Controller & controller)
 {}
 void GetColorSequencesPacket::parse(std::string &data) {
     Serial.println("Got packet get color sequences strips");
-    // TODO
+    controller.sendColorSequences();
+    Serial.println("Done.");
 }
 
 

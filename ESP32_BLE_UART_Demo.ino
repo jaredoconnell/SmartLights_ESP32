@@ -74,7 +74,7 @@ void testLoop() {
   colors.push_back(cyan);
   colors.push_back(magenta);
   colors.push_back(lightGreen);
-  ColorSequence * colorSeq = new ColorSequence(0, colors, 0, 60, 0);
+  ColorSequence * colorSeq = new ColorSequence(0, colors, 0, 60, 0, "test");
   strip->setColorSequence(colorSeq);
   controller.addColorSequence(colorSeq);
   controller.addLEDStrip(strip);

@@ -57,7 +57,7 @@ class LEDStrip {
     int getID();
     int getNumColors();
     LEDStripComponent * getComponent(int index);
-    std::string getName();
+    std::string& getName();
     void setColorSequence(ColorSequence * colorSequence);
     void displayColor(Color * color);
     void update(int tick);

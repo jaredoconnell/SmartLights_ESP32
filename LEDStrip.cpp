@@ -33,7 +33,7 @@ LEDStripComponent * LEDStrip::getComponent(int index) {
   return components[index];
 }
 
-std::string LEDStrip::getName() {
+std::string& LEDStrip::getName() {
   return name;
 }
 

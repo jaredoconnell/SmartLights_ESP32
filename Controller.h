@@ -44,6 +44,7 @@ class Controller : public BLEServerCallbacks, public BLECharacteristicCallbacks 
     std::map<int, Adafruit_PWMServoDriver*>& getPwmDrivers();
 
     void sendLEDStrips();
+    void sendColorSequences();
     void queuePacket(SendablePacket *);
 
     void onTick(int time);

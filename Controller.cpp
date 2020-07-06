@@ -27,6 +27,7 @@ Controller::Controller() {
   packets[5] = new AddLEDStripPacket(*this);
   packets[8] = new AddColorSequencePacket(*this);
   packets[9] = new SetLEDStripColorSequencePacket(*this);
+  packets[12] = new GetColorSequencesPacket(*this);
 }
 
 
@@ -226,5 +227,14 @@ void Controller::sendLEDStrips() {
   int numPackets = (ledStrips.size() + numLEDStripsPerPacket - 1) / numLEDStripsPerPacket;
   for (int i = 0; i < numPackets; i++) {
     queuePacket(new SendLEDStripDataPacket(*this, i * numLEDStripsPerPacket, numLEDStripsPerPacket));
+  }
+}
+
+void Controller::sendColorSequences() {
+  // Number of packets needed is the rounded up divided by 6.
+  int numColorSequencesPerPacket = 6;
+  int numPackets = (ledStrips.size() + numColorSequencesPerPacket - 1) / numColorSequencesPerPacket;
+  for (int i = 0; i < numPackets; i++) {
+    queuePacket(new SendColorSequenceDataPacket(*this, i * numColorSequencesPerPacket, numColorSequencesPerPacket));
   }
 }
