@@ -9,10 +9,17 @@
 // Send debug messages
 #include <HardwareSerial.h>
 
-int ReceivedPacket::getShort(std::string& str, int index) {
-  int a = str[index];
-  int b = str[index + 1];
-  return a * 255 + b;
+int ReceivedPacket::getShort(std::istream& data) {
+  return data.get() * 255 + data.get();
+}
+
+std::string ReceivedPacket::getString(std::istream& data) {
+  int strLen = data.get();
+  std::string result = "";
+  for (int i = 0; i < strLen; i++) {
+    result += data.get();
+  }
+  return result;
 }
 
 // ---------------------------------------------------- //
@@ -21,7 +28,7 @@ GetPWMPacket::GetPWMPacket(Controller & controller)
   : controller(controller)
 {}
 
-void GetPWMPacket::parse(std::string &data) {
+void GetPWMPacket::parse(std::istream &data) {
     Serial.println("Got packet get pwm driver");
     SendDriverDataPacket * response = new SendDriverDataPacket(controller);
     controller.queuePacket(response);
@@ -33,7 +40,7 @@ void GetPWMPacket::parse(std::string &data) {
 GetLEDStripsPacket::GetLEDStripsPacket(Controller & controller)
   : controller(controller)
 {}
-void GetLEDStripsPacket::parse(std::string &data) {
+void GetLEDStripsPacket::parse(std::istream &data) {
     Serial.println("Got packet get led strips");
     controller.sendLEDStrips();
     Serial.println("Done");
@@ -44,9 +51,9 @@ void GetLEDStripsPacket::parse(std::string &data) {
 AddPWMDriverPacket::AddPWMDriverPacket(Controller & controller)
   : controller(controller)
 {}
-void AddPWMDriverPacket::parse(std::string &data) {
+void AddPWMDriverPacket::parse(std::istream &data) {
     Serial.println("Got packet add pwm driver");
-    controller.addPWMDriver(data[0]);
+    controller.addPWMDriver(data.get());
     Serial.println("Done");
 }
 
@@ -55,23 +62,23 @@ void AddPWMDriverPacket::parse(std::string &data) {
 AddLEDStripPacket::AddLEDStripPacket(Controller & controller)
   : controller(controller)
 {}
-void AddLEDStripPacket::parse(std::string &data) {
+void AddLEDStripPacket::parse(std::istream &data) {
   Serial.println("Got packet add led strip");
-  int id = getShort(data, 0);
+  int id = getShort(data);
   Serial.print("ID: ");
   Serial.println(id);
-  int numColors = data[2];
+  int numColors = data.get();
   Serial.print("Num colors: ");
   Serial.println(numColors);
   
   LEDStripComponent ** components = new LEDStripComponent*[numColors];
   for (int i = 0; i < numColors; i++) {
     
-    uint8_t driverID = data[i * 5 + 3];
-    uint8_t driverPin = data[i * 5 + 4];
-    uint8_t red = data[i * 5 + 5];
-    uint8_t green = data[i * 5 + 6];
-    uint8_t blue = data[i * 5 + 7];
+    uint8_t driverID = data.get();
+    uint8_t driverPin = data.get();
+    uint8_t red = data.get();
+    uint8_t green = data.get();
+    uint8_t blue = data.get();
     Adafruit_PWMServoDriver * driver = controller.getPWMDriver(driverID);
     if (driver == nullptr) {
       Serial.println("Driver not found");
@@ -84,12 +91,9 @@ void AddLEDStripPacket::parse(std::string &data) {
 
     components[i] = component;
   }
-  int stringArrOffset = (numColors - 1) * 5 + 8;
-  int nameLength = data[stringArrOffset];
-  std::string name = data.substr(stringArrOffset + 1, nameLength);
-  Serial.print("Name length: ");
-  Serial.println(nameLength);
 
+  std::string name = getString(data);
+    
   LEDStrip * strip = new LEDStrip(id, numColors, components, name);
   controller.addLEDStrip(strip);
   
@@ -102,13 +106,13 @@ AddColorSequencePacket::AddColorSequencePacket(Controller & controller)
   : controller(controller)
 {}
 
-void AddColorSequencePacket::parse(std::string &data) {
+void AddColorSequencePacket::parse(std::istream &data) {
     Serial.println("Got packet add color sequence");
     // These values are one more than the color sequence data
     // index due to the canOverwrite value.
-    bool canOverwrite = data[0];
+    bool canOverwrite = data.get();
 
-    int sequenceID = getShort(data, 1);
+    int sequenceID = getShort(data);
     Serial.print("Sequence ID: ");
     Serial.println(sequenceID);
     // validate
@@ -117,32 +121,30 @@ void AddColorSequencePacket::parse(std::string &data) {
       return;
     }
     
-    int numItems = data[3];
+    int numItems = data.get();
     Serial.print("Number of items: ");
     Serial.println(numItems);
-    int sequenceType = data[4];
-    int sustainTime = getShort(data, 5);
+    int sequenceType = data.get();
+    int sustainTime = getShort(data);
     Serial.print("Sustain time: ");
     Serial.println(sustainTime);
-    int transitionTime = getShort(data, 7);
+    int transitionTime = getShort(data);
     Serial.print("Transition time: ");
     Serial.println(transitionTime);
-    int transitionType = data[9];
+    int transitionType = data.get();
 
     std::vector<Color*> colors;
     for (int i = 0; i < numItems; i++) {
-      int red = data[i * 3 + 10];
-      int green = data[i * 3 + 11];
-      int blue = data[i * 3 + 12];
+      int red = data.get();
+      int green = data.get();
+      int blue = data.get();
 
       colors.push_back(new Color(red, green, blue));
     }
     Serial.print("Added colors: ");
     Serial.println(numItems);
 
-    int stringArrOffset = numItems * 3 + 10;
-    int nameLength = data[stringArrOffset];
-    std::string name = data.substr(stringArrOffset + 1, nameLength);
+    std::string name = getString(data);
     ColorSequence * colorSeq = new ColorSequence(sequenceID, colors, sustainTime, transitionTime, transitionType, name);
     controller.addColorSequence(colorSeq);
 }
@@ -152,7 +154,7 @@ void AddColorSequencePacket::parse(std::string &data) {
 GetColorSequencesPacket::GetColorSequencesPacket(Controller & controller)
   : controller(controller)
 {}
-void GetColorSequencesPacket::parse(std::string &data) {
+void GetColorSequencesPacket::parse(std::istream &data) {
     Serial.println("Got packet get color sequences strips");
     controller.sendColorSequences();
     Serial.println("Done.");
@@ -164,10 +166,10 @@ void GetColorSequencesPacket::parse(std::string &data) {
 SetLEDStripColorSequencePacket::SetLEDStripColorSequencePacket(Controller & controller)
   : controller(controller)
 {}
-void SetLEDStripColorSequencePacket::parse(std::string &data) {
+void SetLEDStripColorSequencePacket::parse(std::istream &data) {
     Serial.println("Got packet set led strip color sequence");
-    int LEDStripID = getShort(data, 0);
-    int colorSeqID = getShort(data, 2);
+    int LEDStripID = getShort(data);
+    int colorSeqID = getShort(data);
 
     ColorSequence * seq = controller.getColorSequence(colorSeqID);
     if (seq != nullptr) {

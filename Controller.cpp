@@ -4,6 +4,9 @@
 #include "SendablePackets.h"
 #include "ReceivedPackets.h"
 
+#include <string>
+#include <sstream>
+
 #include <Adafruit_PWMServoDriver.h>
 
 // Send debug messages
@@ -79,7 +82,9 @@ void Controller::onWrite(BLECharacteristic *pCharacteristic) {
   std::string rxValue = pCharacteristic->getValue();
 
   if (rxValue.length() > 0) {
-    int packetID = rxValue[0];
+    std::stringstream strStream(rxValue);
+
+    int packetID = strStream.get();
 
     auto packetItr = packets.find(packetID);
     if (packetItr == packets.end()) {
@@ -87,8 +92,7 @@ void Controller::onWrite(BLECharacteristic *pCharacteristic) {
       Serial.println(packetID);
       // TODO: Send error packet back to phone.
     } else {
-      std::string trimmed = rxValue.substr(1);
-      packetItr->second->parse(trimmed);
+      packetItr->second->parse(strStream);
     }
     
     /*Serial.println("*********");
@@ -233,7 +237,7 @@ void Controller::sendLEDStrips() {
 void Controller::sendColorSequences() {
   // Number of packets needed is the rounded up divided by 6.
   int numColorSequencesPerPacket = 6;
-  int numPackets = (ledStrips.size() + numColorSequencesPerPacket - 1) / numColorSequencesPerPacket;
+  int numPackets = (colorSequences.size() + numColorSequencesPerPacket - 1) / numColorSequencesPerPacket;
   for (int i = 0; i < numPackets; i++) {
     queuePacket(new SendColorSequenceDataPacket(*this, i * numColorSequencesPerPacket, numColorSequencesPerPacket));
   }

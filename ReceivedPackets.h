@@ -1,14 +1,15 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-#include <string>
+#include <istream>
 
 class Controller;
 
 class ReceivedPacket {
   public:
-    int getShort(std::string&, int index);
-    virtual void parse(std::string &) = 0;
+    int getShort(std::istream&);
+    std::string getString(std::istream&);
+    virtual void parse(std::istream &) = 0;
 };
 
 class GetPWMPacket : public ReceivedPacket {
@@ -16,7 +17,7 @@ class GetPWMPacket : public ReceivedPacket {
     Controller & controller;
   public:
     GetPWMPacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 class GetLEDStripsPacket : public ReceivedPacket {
@@ -24,7 +25,7 @@ class GetLEDStripsPacket : public ReceivedPacket {
     Controller & controller;
   public:
     GetLEDStripsPacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 class AddPWMDriverPacket : public ReceivedPacket {
@@ -32,7 +33,7 @@ class AddPWMDriverPacket : public ReceivedPacket {
     Controller & controller;
   public:
     AddPWMDriverPacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 class AddLEDStripPacket : public ReceivedPacket {
@@ -40,7 +41,7 @@ class AddLEDStripPacket : public ReceivedPacket {
     Controller & controller;
   public:
     AddLEDStripPacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 class AddColorSequencePacket : public ReceivedPacket {
@@ -48,7 +49,7 @@ class AddColorSequencePacket : public ReceivedPacket {
     Controller & controller;
   public:
     AddColorSequencePacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 class GetColorSequencesPacket : public ReceivedPacket {
@@ -56,7 +57,7 @@ class GetColorSequencesPacket : public ReceivedPacket {
     Controller & controller;
   public:
     GetColorSequencesPacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 class SetLEDStripColorSequencePacket : public ReceivedPacket {
@@ -64,7 +65,7 @@ class SetLEDStripColorSequencePacket : public ReceivedPacket {
     Controller & controller;
   public:
     SetLEDStripColorSequencePacket(Controller & controller);
-    virtual void parse(std::string &);
+    virtual void parse(std::istream &);
 };
 
 #endif
