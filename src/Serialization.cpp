@@ -12,16 +12,28 @@
 #include <HardwareSerial.h>
 
 int getShort(std::istream& data) {
+	// Big endian, so the first byte is the one
+	// representing the more significant number.
 	return data.get() * 255 + data.get();
 }
 
 std::string getString(std::istream& data) {
+	// The first byte is the length of the string (0-255)
 	int strLen = data.get();
+	// The rest of them are the bytes.
 	std::string result = "";
 	for (int i = 0; i < strLen; i++) {
 		result += data.get();
 	}
 	return result;
+}
+
+Color * getColor(std::istream& data) {
+	int red = data.get();
+	int green = data.get();
+	int blue = data.get();
+
+	return new Color(red, green, blue);
 }
 
 ColorSequence * getColorSequence(std::istream& data) {
@@ -47,11 +59,7 @@ ColorSequence * getColorSequence(std::istream& data) {
 
 	std::vector<Color*> colors;
 	for (int i = 0; i < numItems; i++) {
-		int red = data.get();
-		int green = data.get();
-		int blue = data.get();
-
-		colors.push_back(new Color(red, green, blue));
+		colors.push_back(getColor(data));
 	}
 	Serial.print("Added colors: ");
 	Serial.println(numItems);
@@ -72,9 +80,7 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 		
 		uint8_t driverID = data.get(); // May be 0 if not using PWMServoController
 		uint8_t driverPin = data.get();
-		uint8_t red = data.get();
-		uint8_t green = data.get();
-		uint8_t blue = data.get();
+		Color * color = getColor(data);
 
 		std::shared_ptr<AddressablePin> pin = controller.getPinManager().getPin(driverID, driverPin);
 		if (!pin) {
@@ -82,7 +88,6 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 			throw new std::runtime_error("Pin not found");
 			// TODO: Proper error packet response.
 		}
-		Color * color = new Color(red, green, blue);
 		
 		LEDStripComponent * component = new LEDStripComponent(pin, color);
 
@@ -104,10 +109,9 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	return strip;
 }
 
-
-
 std::string shortToStr(int val) {
 	std::string result = "";
+	// Big endian.
 	unsigned char lowerBytes = static_cast<char>(val);
 	unsigned char higherBytes = static_cast<char>(val >> 8);
 	result += higherBytes;

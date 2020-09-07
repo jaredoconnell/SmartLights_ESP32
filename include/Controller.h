@@ -31,10 +31,24 @@ private:
 	
 public:
 	Controller();
+
+	/**
+	 * Initializes the controller.
+	 * That mostly entails setting up bluetooth.
+	 */
 	void init();
 
+	/**
+	 * Saves the LED strip to the controller.
+	 * That will result in it being saved and updated every tick.
+	 */
 	void addLEDStrip(LEDStrip * strip);
+
+	/**
+	 * Saves the color sequence to the controller.
+	 */
 	void addColorSequence(ColorSequence * seq);
+
 	ColorSequence * getColorSequence(int id);
 	LEDStrip * getLEDStrip(int id);
 
@@ -48,10 +62,25 @@ public:
 	void saveLEDStrips();
 	void loadLEDStrips();
 
+	/**
+	 * Sends all LED Strips in as many packets as needed.
+	 */
 	void sendLEDStrips();
+
+	/**
+	 * Sends all color sequences in as many packets as needed.
+	 */
 	void sendColorSequences();
+
+	/**
+	 * Queues the packet. It will be deleted after it is successfully recieved by the
+	 * phone.
+	 */
 	void queuePacket(SendablePacket *);
 
+	/**
+	 * Called 60 times per second for updating the colors.
+	 */
 	void onTick(int time);
 
 	// Bluetooth stuff

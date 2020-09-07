@@ -126,10 +126,16 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 
 	std::shared_ptr<Color> componentColor = component->getColor();
 
+	// This calculation uses the dimmest non-zero components. To make calculations easier, it sets 0
+	// values to 1.0 to basically ignore them in the part of the code that determines the dimmest part.
 	double brightnessToMatchRed = componentColor->getRed() > 0 ? red / componentColor->getRed() : 1.0;
 	double brightnessToMatchGreen = componentColor->getGreen() > 0 ? green / componentColor->getGreen() : 1.0;
 	double brightnessToMatchBlue = componentColor->getBlue() > 0 ? blue / componentColor->getBlue() : 1.0;
 	double brightness;
+	// In this part, it's using the limiting factor and using its brightness
+	// For example, if displaying RGB(255, 255, 10), which is a mostly-saturated yellow,
+	// If the warm white LED strip can output RGB(255, 240, 210), the limiting factor
+	// is the blue, since if it's too bright it will output too much blue.
 	if (brightnessToMatchRed < brightnessToMatchGreen) {
 		if (brightnessToMatchRed < brightnessToMatchBlue) {
 			brightness = brightnessToMatchRed;
@@ -143,15 +149,15 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 			brightness = brightnessToMatchBlue;
 		}
 	}
-	if (brightness > 1.0)
+	if (brightness > 1.0) // If the LED strip component isn't bright enough to display it.
 		brightness = 1.0;
 
 	component->setBrightness(brightness);
 
 	// Now subtract this strip's affect on the color components.
-	// (strip color brightness) * (strip set brightness) = (actual brightness) * 255
-	// (strip color brightness) * (strip set brightness) / 255 = (actual brightness)
-
+	// This is to allow several LED strip colors to contribute
+	// to the overall color reproduction.
+	// (strip color brightness) * (strip set brightness) = (actual brightness)
 	red -= componentColor->getRed() * brightness;
 	green -= componentColor->getGreen() * brightness;
 	blue -= componentColor->getBlue() * brightness;
