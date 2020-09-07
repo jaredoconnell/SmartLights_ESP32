@@ -152,9 +152,9 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 	// (strip color brightness) * (strip set brightness) = (actual brightness) * 255
 	// (strip color brightness) * (strip set brightness) / 255 = (actual brightness)
 
-	red -= componentColor->getRed() * brightness / MAX_BRIGHTNESS;
-	green -= componentColor->getGreen() * brightness / MAX_BRIGHTNESS;
-	blue -= componentColor->getBlue() * brightness / MAX_BRIGHTNESS;
+	red -= componentColor->getRed() * brightness;
+	green -= componentColor->getGreen() * brightness;
+	blue -= componentColor->getBlue() * brightness;
 }
 
 void LEDStrip::setColorSequence(ColorSequence * colorSequence) {
