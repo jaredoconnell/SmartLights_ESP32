@@ -6,6 +6,8 @@
 #include <vector>
 #include <memory>
 
+#define MAX_BRIGHTNESS 4095
+
 class Color;
 class ColorSequence;
 class AddressablePin;
@@ -43,12 +45,14 @@ private:
 
 	// Current state
 	std::shared_ptr<Color> currentColor;
-	int currentBrightness = 255;
+	int currentBrightness = MAX_BRIGHTNESS;
+	bool isToggledOn = true;
 	ColorSequence * colorSequence = nullptr;
 
 	// Methods
 	void displayWhiteComponents(double &red, double &green, double &blue);
 	void updateLEDStripComponent(double &red, double &green, double &blue, LEDStripComponent *);
+	void turnOff();
 public:
 	LEDStrip(int id, int numColors, LEDStripComponent ** components, std::string name);
 
@@ -56,6 +60,10 @@ public:
 	int getNumColors();
 	LEDStripComponent * getComponent(int index);
 	std::string& getName();
+	bool isOn();
+	int getCurrentBrightness();
+	void setOnState(bool on);
+	void setCurrentBrightness(int brightness);
 	void setColorSequence(ColorSequence * colorSequence);
 	/**
 	 * Gets the current color sequence, or null if it does not have one set.

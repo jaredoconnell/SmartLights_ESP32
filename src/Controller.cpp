@@ -31,6 +31,7 @@ Controller::Controller() {
 	packets[8] = new AddColorSequencePacket(*this);
 	packets[9] = new SetLEDStripColorSequencePacket(*this);
 	packets[12] = new GetColorSequencesPacket(*this);
+	packets[16] = new SetLEDStripBrightnessPacket(*this);
 }
 
 

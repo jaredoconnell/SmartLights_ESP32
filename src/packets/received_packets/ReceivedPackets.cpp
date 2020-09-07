@@ -107,3 +107,24 @@ void SetLEDStripColorSequencePacket::parse(std::istream &data) {
 		Serial.println(colorSeqID);
 	}
 }
+
+// ---------------------------------------------------- //
+
+SetLEDStripBrightnessPacket::SetLEDStripBrightnessPacket(Controller & controller)
+	: controller(controller)
+{}
+void SetLEDStripBrightnessPacket::parse(std::istream &data) {
+	Serial.println("Got packet set led strip brightness");
+	int LEDStripID = getShort(data);
+	bool isOn = data.get();
+	int brightness = getShort(data);
+
+	LEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
+	if (ledStrip != nullptr) {
+		ledStrip->setCurrentBrightness(brightness);				
+		ledStrip->setOnState(isOn);
+	} else {
+		Serial.print("Could not find LED strip ");
+		Serial.println(LEDStripID);
+	}
+}

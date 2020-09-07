@@ -64,6 +64,8 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	int id = getShort(data);
 	int numColors = data.get();
 	int currColorSequenceID = getShort(data);
+	bool isOn = data.get() != 0;
+	int brightness = getShort(data);
 	
 	LEDStripComponent ** components = new LEDStripComponent*[numColors];
 	for (int i = 0; i < numColors; i++) {
@@ -90,6 +92,9 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	std::string name = getString(data);
 
 	LEDStrip * strip = new LEDStrip(id, numColors, components, name);
+
+	strip->setOnState(isOn);
+	strip->setCurrentBrightness(brightness);
 	
 	// attempts to get and set the color sequence if it is non-zero
 	if (currColorSequenceID != 0) {
@@ -133,6 +138,8 @@ std::string ledStripToStr(LEDStrip * strip) {
 		colorSequence = currSequence->getID();
 	}
 	result += shortToStr(colorSequence);
+	result += static_cast<char>(strip->isOn());
+	result += shortToStr(strip->getCurrentBrightness());
 	// Next is the components.
 	for (int i = 0; i < numColors; i++) {
 		LEDStripComponent * component = strip->getComponent(i);

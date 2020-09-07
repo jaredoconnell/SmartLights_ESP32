@@ -42,11 +42,13 @@ The number of bytes in the sequence is 9 + n * 3. If there are about 10 other by
 | --- | --- | --- |
 | 0 | Two bytes | The ID of the color strip |
 | 2 | One byte. | The number of colors in the LED strip (typically 1 to 5). <br>Should not exceed 100 (though I cannot see why anyone would do that). |
-| n * 6 + 3 | One byte. | The driver ID |
-| n * 6 + 4 | One byte. | The index of the driver pin |
-| n * 6 + 5 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
-| n * 6 + 6 | Two Bytes. | The current color sequence ID, or 0 if none. |
-| N * 5 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
+| 3 | Two Bytes. | The current color sequence ID, or 0 if none. |
+| 5 | One byte. | Whether the LED strip is toggled on (1) of off (0) |
+| 6 | Two Bytes. | The current brightness of the LED strip (0-4095) |
+| n * 6 + 8 | One byte. | The driver ID |
+| n * 6 + 9 | One byte. | The index of the driver pin |
+| n * 6 + 10 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
+| N * 5 + 8 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
 
 For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 28 bytes long. That means, with overhead, it is realistic to pack about 17 LED strips into a single packet.
 
@@ -125,7 +127,7 @@ Packet ID: 11 \
 Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The Color Strip ID |
+| 0 | Two bytes | The Color Sequence ID |
 
 Packet name: **Get Color Sequences** \
 Packet ID: 12 \
@@ -140,9 +142,17 @@ Packet ID: 14 \
 Data: None
 
 Packet name: **Get Protocol ID** \
-Packet ID: 14 \
+Packet ID: 15 \
 Data: None
 
+Packet name: **Set LED Strip brightness** \
+Packet ID: 16 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The LED Strip ID |
+| 2 | One Byte | 0 if off, 1 if on |
+| 3 | Two bytes | The LED Strip brightness between 0 and 4095 |
 
 ---
 ### From ESP32 to phone:
@@ -198,7 +208,6 @@ Data: TODO
 Packet name: **Protocol Version Response** \
 Packet ID: 248 \
 Data: TODO
-
 
 
 The version number gets updated every time something changes.

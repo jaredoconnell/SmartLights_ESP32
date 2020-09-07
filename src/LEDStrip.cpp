@@ -42,7 +42,20 @@ int abs(int a) {
 	return a >= 0 ? a : -a;
 }
 
+void LEDStrip::turnOff() {
+	for (int i = 0; i < numColors; i++) {
+		components[i]->setBrightness(0);
+	}
+}
+
+
 void LEDStrip::displayColor(Color * color) {
+
+	if (!isToggledOn) {
+		turnOff();
+		return;
+	}
+
 	// So we have been given an RGB value
 	// We also have the list of all colors in this LED strip.
 	// From the available colors, we need to determine the most
@@ -53,9 +66,9 @@ void LEDStrip::displayColor(Color * color) {
 	// brightness * colorcomponent = (actual color) * 255
 	// (brightness * colorcomponent) / 255 = actualcolor
 
-	double red = (color->getRed() * currentBrightness) / 255;
-	double green = (color->getGreen() * currentBrightness) / 255;
-	double blue = (color->getBlue() * currentBrightness) / 255;
+	double red = static_cast<double>(color->getRed() * currentBrightness) / MAX_BRIGHTNESS;
+	double green = static_cast<double>(color->getGreen() * currentBrightness) / MAX_BRIGHTNESS;
+	double blue = static_cast<double>(color->getBlue() * currentBrightness) / MAX_BRIGHTNESS;
 	displayWhiteComponents(red, green, blue);
 
 	// TODO: Account for bi-color components and account for it here.
@@ -139,9 +152,9 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 	// (strip color brightness) * (strip set brightness) = (actual brightness) * 255
 	// (strip color brightness) * (strip set brightness) / 255 = (actual brightness)
 
-	red -= componentColor->getRed() * brightness / 255;
-	green -= componentColor->getGreen() * brightness / 255;
-	blue -= componentColor->getBlue() * brightness / 255;
+	red -= componentColor->getRed() * brightness / MAX_BRIGHTNESS;
+	green -= componentColor->getGreen() * brightness / MAX_BRIGHTNESS;
+	blue -= componentColor->getBlue() * brightness / MAX_BRIGHTNESS;
 }
 
 void LEDStrip::setColorSequence(ColorSequence * colorSequence) {
@@ -152,6 +165,31 @@ ColorSequence * LEDStrip::getCurrentColorSequence() {
 	return this->colorSequence;
 }
 
+
+bool LEDStrip::isOn() {
+	return this->isToggledOn;
+}
+
+int LEDStrip::getCurrentBrightness() {
+	return currentBrightness;
+}
+void LEDStrip::setOnState(bool on) {
+	bool changed = on != this->isToggledOn;
+	this->isToggledOn = on;
+
+	if (currentColor && changed) {
+		displayColor(currentColor.get());
+	}
+}
+
+void LEDStrip::setCurrentBrightness(int brightness) {
+	bool changed = brightness != this->currentBrightness;
+	this->currentBrightness = brightness;
+
+	if (currentColor && changed) {
+		displayColor(currentColor.get());
+	}
+}
 
 void LEDStrip::update(int tick) {
 	if (colorSequence != nullptr) {
