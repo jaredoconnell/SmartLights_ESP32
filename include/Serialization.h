@@ -51,6 +51,11 @@ ColorSequence * getColorSequence(std::istream& stream);
 LEDStrip * getLEDStrip(std::istream& stream, Controller& controller);
 
 /**
+ * @return the binary representation of a short.
+ */
+std::string strToStr(std::string str);
+
+/**
  * @return the binary representation of the given short int.
  */
 std::string shortToStr(int val);

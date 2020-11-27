@@ -74,4 +74,20 @@ class SetLEDStripBrightnessPacket : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+class GetSettingsPacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		GetSettingsPacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
+class SetSettingPacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		SetSettingPacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

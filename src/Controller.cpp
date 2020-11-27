@@ -1,6 +1,7 @@
 #include "Controller.h"
 #include "LEDStrip.h"
 #include "ColorSequence.h"
+#include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "packets/received_packets/ReceivedPackets.h"
 
@@ -32,6 +33,8 @@ Controller::Controller() {
 	packets[9] = new SetLEDStripColorSequencePacket(*this);
 	packets[12] = new GetColorSequencesPacket(*this);
 	packets[16] = new SetLEDStripBrightnessPacket(*this);
+	packets[17] = new GetSettingsPacket(*this);
+	packets[18] = new SetSettingPacket(*this);
 }
 
 
@@ -208,4 +211,39 @@ void Controller::sendColorSequences() {
 	for (int i = 0; i < numPackets; i++) {
 		queuePacket(new SendColorSequenceDataPacket(*this, i * numColorSequencesPerPacket, numColorSequencesPerPacket));
 	}
+}
+
+void Controller::sendSettings() {
+	// For now, one per packet
+	for (int i = 0; i < settings.size(); i++) {
+		queuePacket(new SendSettingsPacket(*this, i, 1));
+	}
+}
+
+
+void Controller::setSetting(Setting * setting) {
+	// Look for an existing one
+	auto itr = settings.find(setting->getSettingName());
+	if (itr != settings.end()) {
+		Setting * oldVal = itr->second;
+		delete oldVal;
+	}
+	settings[setting->getSettingName()] = setting;
+
+	if (setting->getSettingName() == "name") {
+		esp_ble_gap_set_device_name(setting->getStrVal().c_str());
+	}
+}
+
+Setting * Controller::getSetting(std::string settingName) {
+	auto itr = settings.find(settingName);
+	if (itr == settings.end()) {
+		return nullptr;
+	} else {
+		return itr->second;
+	}
+}
+
+std::map<std::string, Setting *> Controller::getSettings() {
+	return settings;
 }

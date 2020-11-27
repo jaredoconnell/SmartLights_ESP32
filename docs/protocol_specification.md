@@ -154,6 +154,19 @@ Data:
 | 2 | One Byte | 0 if off, 1 if on |
 | 3 | Two bytes | The LED Strip brightness between 0 and 4095 |
 
+Packet name: **Get Settings** \
+Packet ID: 17 \
+Data: None
+
+Packet name: **Set Setting** \
+Packet ID: 18 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Many Bytes | The Setting ID as a String |
+| ? | One Byte | 0 if short, 1 if string |
+| ? | 2 or more bytes | The data (as string or int) |
+
 ---
 ### From ESP32 to phone:
 
@@ -201,15 +214,26 @@ Packet ID: 250 \
 Data: TODO
 
 
-Packet name: **Version Number Response** \
+Packet name: **Contents Version Number Response** \
 Packet ID: 249 \
 Data: TODO
+
+The version number gets updated every time something changes.
+If the version number is greater than it was last time, the phone should query for changes.
+If the version number is less than it was last time, it means the old data was lost. The user should be prompted asking if the phone should re-sync the data.
 
 Packet name: **Protocol Version Response** \
 Packet ID: 248 \
 Data: TODO
 
-
-The version number gets updated every time something changes.
-If the version number is greater than it was last time, the phone should query for changes.
-If the version number is less than it was last time, it means the old data was lost. The user should be prompted asking if the phone should re-sync the data.
+Packet name: **Settings Response** \
+Packet ID: 247 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The number of settings |
+| 2 | Two bytes | The offset for this packet |
+| 4 | One byte | The number of settings being sent in this packet |
+| ? + 4 | Many Bytes | The setting name |
+| ? | One Byte | 0 if this setting is a short, 1 if string. |
+| ? | Two or many | The setting value |

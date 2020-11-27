@@ -4,6 +4,7 @@
 #include "ColorSequence.h"
 #include "Controller.h"
 #include "LEDStrip.h"
+#include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "Serialization.h"
 
@@ -126,5 +127,33 @@ void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 	} else {
 		Serial.print("Could not find LED strip ");
 		Serial.println(LEDStripID);
+	}
+}
+
+// ---------------------------------------------------- //
+
+GetSettingsPacket::GetSettingsPacket(Controller & controller)
+	: controller(controller)
+{}
+
+void GetSettingsPacket::parse(std::istream &data) {
+	controller.sendSettings();
+}
+
+// ---------------------------------------------------- //
+
+SetSettingPacket::SetSettingPacket(Controller & controller)
+	: controller(controller)
+{}
+
+void SetSettingPacket::parse(std::istream &data) {
+	std::string name = getString(data);
+	bool isString = data.get();
+	if (isString) {
+		std::string value = getString(data);
+		controller.setSetting(new Setting(name, value));
+	} else {
+		int value = getShort(data);
+		controller.setSetting(new Setting(name, value));
 	}
 }

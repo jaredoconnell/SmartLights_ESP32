@@ -1,6 +1,7 @@
 #include "packets/sendable_packets/SendablePackets.h"
 
 #include "Serialization.h"
+#include "Setting.h"
 #include "Controller.h"
 #include "Color.h"
 #include "LEDStrip.h"
@@ -83,5 +84,42 @@ std::string SendColorSequenceDataPacket::getData() {
 	output += static_cast<char>(actualQuantity); // third, the quantity sent in this packet
 	output += componentsStr;
 	
+	return output;
+}
+
+
+// ------------------------------------------------------------------------------ //
+SendSettingsPacket::SendSettingsPacket(Controller & controller, int offset, int quantity)
+	: SendablePacket(controller), offset(offset), quantity(quantity)
+{}
+
+std::string SendSettingsPacket::getData() {
+	std::string output = "";
+	// Packet ID
+	output += static_cast<char>(247);
+
+	const std::map<std::string, Setting *>& settings = controller.getSettings();
+	output += shortToStr(settings.size()); // first, the total number of LED strips
+	output += shortToStr(offset); // second, the offset for the packet
+	auto itr = settings.cbegin();
+	std::advance(itr, offset);
+	int actualQuantity = 0;
+	std::string componentsStr = "";
+	for (int i = 0; i < quantity && itr != settings.cend(); i++) {
+		Setting * setting = (* itr++).second;
+		//componentsStr += colorSequenceToStr(colorSequence);
+		componentsStr += strToStr(setting->getSettingName());
+		if (setting->isString()) {
+			componentsStr += static_cast<char>(1);
+			componentsStr += strToStr(setting->getStrVal());
+		} else {
+			componentsStr += static_cast<char>(0);
+			componentsStr += shortToStr(setting->getIntVal());
+		}
+		actualQuantity++;
+	}
+	output += static_cast<char>(actualQuantity); // third, the quantity sent in this packet
+	output += componentsStr;
+
 	return output;
 }

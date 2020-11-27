@@ -36,5 +36,12 @@ class SendColorSequenceDataPacket : public SendablePacket {
 		SendColorSequenceDataPacket(Controller & controller, int offset, int quantity);
 		virtual std::string getData();
 };
+class SendSettingsPacket : public SendablePacket {
+	private:
+		int offset, quantity;
+	public:
+		SendSettingsPacket(Controller & controller, int offset, int quantity);
+		virtual std::string getData();
+};
 
 #endif

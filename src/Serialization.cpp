@@ -109,6 +109,10 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	return strip;
 }
 
+std::string strToStr(std::string str) {
+	return static_cast<char>(str.length()) + str;
+}
+
 std::string shortToStr(int val) {
 	std::string result = "";
 	// Big endian.
@@ -152,8 +156,7 @@ std::string ledStripToStr(LEDStrip * strip) {
 		result += static_cast<char>(component->getPin()->getPinNum());
 		result += colorToStr(component->getColor().get());
 	}
-	result += static_cast<char>(strip->getName().length());
-	result += strip->getName();
+	result += strToStr(strip->getName());
 	return result;
 }
 
@@ -172,7 +175,6 @@ std::string colorSequenceToStr(ColorSequence * sequence) {
 	for (Color * color : colors) {
 		result += colorToStr(color);
 	}
-	result += static_cast<char>(sequence->getName().length());
-	result += sequence->getName();
+	result += strToStr(sequence->getName());
 	return result;
 }

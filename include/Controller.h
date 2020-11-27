@@ -12,9 +12,12 @@ class ColorSequence;
 class BLECharacteristic;
 class ReceivedPacket;
 class SendablePacket;
+class Setting;
 
 class Controller : public BLEServerCallbacks, public BLECharacteristicCallbacks {
 private:
+	std::map<std::string, Setting *> settings;
+
 	std::map<int, ColorSequence *> colorSequences;
 	std::map<int, LEDStrip *> ledStrips;
 
@@ -73,6 +76,11 @@ public:
 	void sendColorSequences();
 
 	/**
+	 * Sends all settings in as many packets as needed.
+	 */
+	void sendSettings();
+
+	/**
 	 * Queues the packet. It will be deleted after it is successfully recieved by the
 	 * phone.
 	 */
@@ -88,6 +96,11 @@ public:
 	void onConnect(BLEServer* pServer);
 	void onDisconnect(BLEServer* pServer);
 	void onWrite(BLECharacteristic *pCharacteristic);
+
+	// Settings stuff
+	void setSetting(Setting * setting);
+	Setting * getSetting(std::string settingName);
+	std::map<std::string, Setting *> getSettings();
 };
 
 #endif
