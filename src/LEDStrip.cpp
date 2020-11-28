@@ -6,6 +6,7 @@
 #include <Adafruit_PWMServoDriver.h>
 // Send debug messages
 #include <HardwareSerial.h>
+#include <string>
 
 LEDStrip::LEDStrip(int id, int numColors, LEDStripComponent ** components, std::string name)
 	: id(id), numColors(numColors), components(components), name(name)
@@ -13,8 +14,7 @@ LEDStrip::LEDStrip(int id, int numColors, LEDStripComponent ** components, std::
 	for (int i = 0; i < numColors; i++) {
 		std::shared_ptr<Color> color = components[i]->getColor();
 		if (color->hasWhite()) {
-			int diff = color->getRed() - color->getBlue();
-			whiteComponents[diff] = components[i];
+			whiteComponents.push_back(components[i]);
 		} else {
 			singleColorComponents.push_back(components[i]);
 		}
@@ -36,10 +36,6 @@ LEDStripComponent * LEDStrip::getComponent(int index) {
 
 std::string& LEDStrip::getName() {
 	return name;
-}
-
-int abs(int a) {
-	return a >= 0 ? a : -a;
 }
 
 void LEDStrip::turnOff() {
@@ -74,7 +70,7 @@ void LEDStrip::displayColor(Color * color) {
 	// TODO: Account for bi-color components and account for it here.
 
 	for (LEDStripComponent * strip : singleColorComponents) {
-		updateLEDStripComponent(red, green, blue, strip);
+		updateLEDStripComponent(red, green, blue, 1, strip);
 	}
 }
 
@@ -87,32 +83,80 @@ void LEDStrip::displayWhiteComponents(double &red, double &green, double &blue) 
 	// Or if there are no white components
 	if (red == 0 || green == 0 || blue == 0 || whiteComponents.size() == 0) {
 		for (auto comp : whiteComponents) {
-			comp.second->setBrightness(0);
+			comp->setBrightness(0);
 		}
 		return;
 	}
 
-	// First, find the white that is closest
-	auto itr = whiteComponents.begin();
+	double colorDiff = (red - blue) / (red + blue);
+	// For white, we only need to get the two closest components if there
+	// is one more cool, and one more warm. If there is not an LED on both
+	// sides, then it will use the single closest one.
 	
-	int closestDiff = abs(itr->first);
-	LEDStripComponent * closestComponent = itr->second;
-	itr++;
+	// Note: Negative means more blue, positive means more red.
+	double closestPositive = 99999999;
+	double closestNegative = -99999999;
+	LEDStripComponent * closestNegativeComponent = nullptr;
+	LEDStripComponent * closestPositiveComponent = nullptr;
 
-	while (itr != whiteComponents.end()) {
-		int thisDiff = abs(itr->first);
-		if (thisDiff < closestDiff) {
-			closestDiff = thisDiff;
-			closestComponent = itr->second;
+
+	for (LEDStripComponent * whiteComp : whiteComponents) {
+		std::shared_ptr<Color> color = whiteComp->getColor();
+		double compDiff = (color->getRed() - color->getBlue()) / static_cast<double>(color->getRed() + color->getBlue());
+		double thisDiff = compDiff - colorDiff;
+
+		if (thisDiff == 0) {
+			// Exact match, so use it and be done
+			closestNegative = 0;
+			closestNegativeComponent = nullptr;
+			closestPositive = 0;
+			closestPositiveComponent = whiteComp;
+		} else if (thisDiff < 0) {
+			if (thisDiff > closestNegative) {
+				closestNegative = thisDiff;
+				closestNegativeComponent = whiteComp;
+			}
+		} else {
+			if (thisDiff < closestPositive) {
+				closestPositive = thisDiff;
+				closestPositiveComponent = whiteComp;
+			}
 		}
-		itr++;
 	}
-	updateLEDStripComponent(red, green, blue, closestComponent);
 
-	// TODO: Recursively call for the other white components 
+	if (closestNegativeComponent == nullptr && closestPositiveComponent == nullptr) {
+		Serial.println("Both null. This should not happen. Doing nothing.");
+	} else if (closestNegativeComponent == nullptr) {
+		updateLEDStripComponent(red, green, blue, 1, closestPositiveComponent);
+	} else if (closestPositiveComponent == nullptr) {
+		updateLEDStripComponent(red, green, blue, 1, closestNegativeComponent);
+	} else {
+		// Solve equation to get proper ratio
+		// Solve for factor
+		// ratio1 * factor + ratio2 * (1 - factor) = intended_diff
+		// ratio1*factor + ratio2 - ratio2*factor = intended_diff
+		// ratio1*factor - ratio2*factor = intended_diff - ratio2
+		// factor * (ratio1 - ratio2) = intended_diff - ratio2
+		// factor = (intended_diff - ratio2) / (ratio1 - ratio2)
+		// Intended diff is 0
+		// factor_of_diff1 = (diff2) / (diff1 - diff2)
+
+		double percentNegative = closestPositive == 0 ? 0 : closestPositive / (closestPositive - closestNegative);
+
+		updateLEDStripComponent(red, green, blue, percentNegative, closestNegativeComponent);
+		updateLEDStripComponent(red, green, blue, 1, closestPositiveComponent);
+	}
+	// Turn off unused components
+	for (auto whiteComp : whiteComponents) {
+		if (whiteComp != closestPositiveComponent && whiteComp != closestNegativeComponent) {
+			whiteComp->setBrightness(0);
+		}
+
+	}
+	// No other white components are needed.
 }
 
-void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue, LEDStripComponent * component) {
+void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue, double factor, LEDStripComponent * component) {
 	// Find the highest brightness it can be without going over.
 	// Zero values are set to the max brightness because it can be at the max brightness
 	// without producing the wrong color.
@@ -151,6 +195,7 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 	}
 	if (brightness > 1.0) // If the LED strip component isn't bright enough to display it.
 		brightness = 1.0;
+	brightness *= factor;
 
 	component->setBrightness(brightness);
 
@@ -239,7 +284,10 @@ std::shared_ptr<Color> LEDStripComponent::getColor() {
 }
 
 void LEDStripComponent::setBrightness(double brightness) {
-	if (brightness > 1.0 || brightness < 0.0) {
+	if (brightness == -0.0) {
+		brightness = 0;
+	}
+	if (brightness > 1.0 || (brightness <= -0.000000001)) {
 		Serial.printf("Invalid brightness value %f\n", brightness);
 		return;
 	}

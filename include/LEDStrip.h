@@ -49,7 +49,7 @@ private:
 	// A map that maps the difference between red and blue.
 	// Positive values mean more red, negative means more blue.
 	// Identical values will be overwritten, since it's a map.
-	std::map<int, LEDStripComponent *> whiteComponents;
+	std::vector<LEDStripComponent *> whiteComponents;
 	std::vector<LEDStripComponent *> singleColorComponents;
 	std::string name;
 
@@ -69,7 +69,7 @@ private:
 	 * Giving the LED strip component's output, this function sets its output
 	 * to the maximum appropriate level that maintains color accuracy.
 	 */
-	void updateLEDStripComponent(double &red, double &green, double &blue, LEDStripComponent *);
+	void updateLEDStripComponent(double &red, double &green, double &blue, double factor, LEDStripComponent *);
 
 	/**
 	 * Sets all components to off
