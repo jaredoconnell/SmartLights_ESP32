@@ -90,4 +90,12 @@ class SetSettingPacket : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+class SetColorPacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		SetColorPacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

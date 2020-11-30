@@ -1,6 +1,6 @@
 # LED Strip Controller Bluetooth LE Protocol Specification
 
-### Version 1.0
+### Version 1.1
 
 ---
 ## Data types:
@@ -45,12 +45,15 @@ The number of bytes in the sequence is 9 + n * 3. If there are about 10 other by
 | 3 | Two Bytes. | The current color sequence ID, or 0 if none. |
 | 5 | One byte. | Whether the LED strip is toggled on (1) of off (0) |
 | 6 | Two Bytes. | The current brightness of the LED strip (0-4095) |
-| n * 6 + 8 | One byte. | The driver ID |
-| n * 6 + 9 | One byte. | The index of the driver pin |
-| n * 6 + 10 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
-| N * 5 + 8 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
+| 8 | One Byte. | Temporary color is active (1 if active, else 0) |
+| 9 | Two Bytes. | Seconds left for temp color (0 if persistent) |
+| 11 | Three Bytes. | The temporary color |
+| n * 5 + 14 | One byte. | The driver ID |
+| n * 5 + 15 | One byte. | The index of the driver pin |
+| n * 5 + 16 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
+| N * 5 + 14 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
 
-For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 28 bytes long. That means, with overhead, it is realistic to pack about 17 LED strips into a single packet.
+For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 32 bytes long. That means, with overhead, it is realistic to pack about 15 LED strips into a single packet.
 
 ---
 
@@ -166,6 +169,19 @@ Data:
 | 0 | Many Bytes | The Setting ID as a String |
 | ? | One Byte | 0 if short, 1 if string |
 | ? | 2 or more bytes | The data (as string or int) |
+
+Packet name: **Set Color Without Sequence** \
+Packet ID: 19 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The LED Strip ID |
+| 2 | Three bytes | The Color |
+| 5 | Two bytes | The number of seconds |
+
+Sets the color for the LED strip.
+The color will last the specified number of seconds, indefinitely if 0, except will change if the color sequence is set for the LED strip.
+
 
 ---
 ### From ESP32 to phone:

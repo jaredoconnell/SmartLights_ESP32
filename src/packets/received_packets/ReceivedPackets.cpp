@@ -157,3 +157,24 @@ void SetSettingPacket::parse(std::istream &data) {
 		controller.setSetting(new Setting(name, value));
 	}
 }
+
+// ---------------------------------------------------- //
+
+SetColorPacket::SetColorPacket(Controller & controller)
+	: controller(controller)
+{}
+
+void SetColorPacket::parse(std::istream &data) {
+	int LEDStripID = getShort(data);
+	Color * color = getColor(data);
+	int seconds = getShort(data);
+
+	LEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
+	if (ledStrip != nullptr) {
+		ledStrip->persistColor(color, seconds);
+	} else {
+		
+		Serial.print("Could not find LED strip ");
+		Serial.println(LEDStripID);
+	}
+}

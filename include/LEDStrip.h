@@ -58,6 +58,7 @@ private:
 	int currentBrightness = MAX_BRIGHTNESS;
 	bool isToggledOn = true;
 	ColorSequence * colorSequence = nullptr;
+	int ticksLeftToPersist = -1;
 
 	// Methods
 	/**
@@ -131,6 +132,15 @@ public:
 	ColorSequence * getCurrentColorSequence();
 
 	/**
+	 * Persists the selected color for the specified amount of seconds
+	 * Set to 0 to persist indefinitely.
+	 * 
+	 * Calling this again with a different color, or changing the
+	 * color sequence will overwrite this.
+	 */
+	void persistColor(Color * color, int seconds);
+
+	/**
 	 * Sets the color the LED strip currently displays, with the current
 	 * brightness and on-state.
 	 */
@@ -147,6 +157,20 @@ public:
 	 * on the current time. Used for when there are no color sequences.
 	 */
 	void flash(int tick);
+
+	/**
+	 * Returns the currently displayed color. The color can be a temporary color,
+	 * or it can be whatever color the color sequence is displaying at this time.
+	 * To determine if it is a temporary color, call getTicksLeftForTempColor()
+	 */
+	std::shared_ptr<Color> getDisplayedColor();
+
+	/**
+	 * Returns the number of ticks left for the temporary color.
+	 * -1 means no temporary color
+	 * -2 means persistent temporary color
+	 */
+	int getTicksLeftForTempColor();
 };
 
 #endif
