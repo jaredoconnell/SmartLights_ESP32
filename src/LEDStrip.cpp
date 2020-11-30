@@ -211,6 +211,7 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 void LEDStrip::persistColor(Color * color, int seconds) {
 	this->currentColor = std::shared_ptr<Color>(color);
 	if (seconds == 0) {
+		persistentColor = std::make_shared<Color>(color);
 		ticksLeftToPersist = -2;
 	} else {
 		ticksLeftToPersist = seconds * 60;
@@ -221,6 +222,7 @@ void LEDStrip::persistColor(Color * color, int seconds) {
 void LEDStrip::setColorSequence(ColorSequence * colorSequence) {
 	this->colorSequence = colorSequence;
 	ticksLeftToPersist = -1;
+	persistentColor = nullptr;
 }
 
 std::shared_ptr<Color> LEDStrip::getDisplayedColor() {
@@ -264,6 +266,12 @@ void LEDStrip::setCurrentBrightness(int brightness) {
 void LEDStrip::update(int tick) {
 	if (ticksLeftToPersist >= 0) {
 		ticksLeftToPersist--;
+		if (ticksLeftToPersist == 0 && persistentColor) {
+			// The temp color is over, but there is a persistent color ready
+			ticksLeftToPersist = -2;
+			currentColor = std::make_shared<Color>(persistentColor.get());
+			displayColor(currentColor.get());
+		}
 	} else if (ticksLeftToPersist == -2) {
 		// Persist
 	} else if (colorSequence != nullptr) {

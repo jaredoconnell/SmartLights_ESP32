@@ -55,6 +55,7 @@ private:
 
 	// Current state
 	std::shared_ptr<Color> currentColor;
+	std::shared_ptr<Color> persistentColor;
 	int currentBrightness = MAX_BRIGHTNESS;
 	bool isToggledOn = true;
 	ColorSequence * colorSequence = nullptr;
