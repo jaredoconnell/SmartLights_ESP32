@@ -8,7 +8,7 @@
 #include <HardwareSerial.h>
 #include <string>
 
-LEDStrip::LEDStrip(int id, int numColors, LEDStripComponent ** components, std::string name)
+LEDStrip::LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name)
 	: id(id), numColors(numColors), components(components), name(name)
 {
 	for (int i = 0; i < numColors; i++) {
@@ -21,7 +21,7 @@ LEDStrip::LEDStrip(int id, int numColors, LEDStripComponent ** components, std::
 	}
 }
 
-int LEDStrip::getID() {
+std::string& LEDStrip::getID() {
 	return id;
 }
 

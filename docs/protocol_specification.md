@@ -25,7 +25,7 @@ A single byte if the practical limit is 255. Else two bytes.
 #### Color Sequences
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The color sequence ID |
+| 0 | 37 Bytes | The color sequence UUID as String |
 | 2 | One byte | The number of items in the sequence. Max 255 |
 | 3 | One byte | The sequence type (in this case, 0) |
 | 4 | Two bytes | The sustain time (in 60ths of a second) |
@@ -35,14 +35,14 @@ A single byte if the practical limit is 255. Else two bytes.
 | N * 5 | Up to 30 | Name of the color sequence as a char array up to 29 characters. |
 Note: n starts at 0.
 
-The number of bytes in the sequence is 9 + n * 3. If there are about 10 other bytes in the packet for other things, the practical limit for a single packet is 54 items in the sequence.
+The number of bytes in the sequence is 44 + n * 3. If there are about 10 other bytes in the packet for other things, the practical limit for a single packet is 54 items in the sequence.
 
 #### LED Strip
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The ID of the color strip |
+| 0 | 37 Bytes | The ID of the color strip |
 | 2 | One byte. | The number of colors in the LED strip (typically 1 to 5). <br>Should not exceed 100 (though I cannot see why anyone would do that). |
-| 3 | Two Bytes. | The current color sequence ID, or 0 if none. |
+| 3 | 37 Bytes. | The current color sequence ID, or 0 if none. |
 | 5 | One byte. | Whether the LED strip is toggled on (1) of off (0) |
 | 6 | Two Bytes. | The current brightness of the LED strip (0-4095) |
 | 8 | One Byte. | Temporary color is active (1 if active, else 0) |
@@ -53,7 +53,7 @@ The number of bytes in the sequence is 9 + n * 3. If there are about 10 other by
 | n * 5 + 16 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
 | N * 5 + 14 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
 
-For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 32 bytes long. That means, with overhead, it is realistic to pack about 15 LED strips into a single packet.
+For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 139 bytes long. That means, with overhead, it is realistic to pack about 3 LED strips into a single packet.
 
 ---
 
@@ -118,8 +118,8 @@ Packet ID: 9 \
 Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The Color Strip ID |
-| 2 | Two bytes | The Color Sequence ID |
+| 0 | 37 Bytes | The Color Strip ID |
+| 2 | 37 Bytes | The Color Sequence ID |
 
 Packet name: **Schedule LED Strip Sequence Change** \
 Packet ID: 10 \
@@ -153,7 +153,7 @@ Packet ID: 16 \
 Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The LED Strip ID |
+| 0 | 37 Bytes | The LED Strip ID |
 | 2 | One Byte | 0 if off, 1 if on |
 | 3 | Two bytes | The LED Strip brightness between 0 and 4095 |
 
@@ -175,7 +175,7 @@ Packet ID: 19 \
 Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | Two bytes | The LED Strip ID |
+| 0 | 37 Bytes | The LED Strip ID |
 | 2 | Three bytes | The Color |
 | 5 | Two bytes | The number of seconds |
 

@@ -3,7 +3,7 @@
 
 // Send debug messages
 #include <HardwareSerial.h>
-ColorSequence::ColorSequence(int id, std::vector<Color*> colors, int sustainTime,
+ColorSequence::ColorSequence(std::string id, std::vector<Color*> colors, int sustainTime,
 															int transitionTime, int transitionTypeID, std::string name)
 	: id(id), name(name), sustainTime(sustainTime), transitionTime(transitionTime),
 		transitionTypeID(transitionTypeID), totalTimePerColor(sustainTime + transitionTime),
@@ -46,7 +46,7 @@ std::shared_ptr<Color> ColorSequence::getCurrentColor() {
 	return currentColor;
 }
 
-int ColorSequence::getID() {
+std::string& ColorSequence::getID() {
 	return id;
 }
 

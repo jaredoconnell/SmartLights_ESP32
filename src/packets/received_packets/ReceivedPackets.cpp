@@ -90,8 +90,8 @@ SetLEDStripColorSequencePacket::SetLEDStripColorSequencePacket(Controller & cont
 {}
 void SetLEDStripColorSequencePacket::parse(std::istream &data) {
 	Serial.println("Got packet set led strip color sequence");
-	int LEDStripID = getShort(data);
-	int colorSeqID = getShort(data);
+	std::string LEDStripID = getString(data);
+	std::string colorSeqID = getString(data);
 
 	ColorSequence * seq = controller.getColorSequence(colorSeqID);
 	if (seq != nullptr) {
@@ -101,11 +101,11 @@ void SetLEDStripColorSequencePacket::parse(std::istream &data) {
 		} else {
 			
 			Serial.print("Could not find LED strip ");
-			Serial.println(LEDStripID);
+			Serial.println(LEDStripID.c_str());
 		}
 	} else {
 		Serial.print("Could not find color sequence ");
-		Serial.println(colorSeqID);
+		Serial.println(colorSeqID.c_str());
 	}
 }
 
@@ -116,7 +116,7 @@ SetLEDStripBrightnessPacket::SetLEDStripBrightnessPacket(Controller & controller
 {}
 void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 	Serial.println("Got packet set led strip brightness");
-	int LEDStripID = getShort(data);
+	std::string LEDStripID = getString(data);
 	bool isOn = data.get();
 	int brightness = getShort(data);
 
@@ -126,7 +126,7 @@ void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 		ledStrip->setOnState(isOn);
 	} else {
 		Serial.print("Could not find LED strip ");
-		Serial.println(LEDStripID);
+		Serial.println(LEDStripID.c_str());
 	}
 }
 
@@ -165,7 +165,7 @@ SetColorPacket::SetColorPacket(Controller & controller)
 {}
 
 void SetColorPacket::parse(std::istream &data) {
-	int LEDStripID = getShort(data);
+	std::string LEDStripID = getString(data);
 	Color * color = getColor(data);
 	int seconds = getShort(data);
 
@@ -175,6 +175,6 @@ void SetColorPacket::parse(std::istream &data) {
 	} else {
 		
 		Serial.print("Could not find LED strip ");
-		Serial.println(LEDStripID);
+		Serial.println(LEDStripID.c_str());
 	}
 }

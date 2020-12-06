@@ -41,7 +41,7 @@ SendLEDStripDataPacket::SendLEDStripDataPacket(Controller & controller, int offs
 std::string SendLEDStripDataPacket::getData() {
 	std::string output = "";
 	output += static_cast<char>(254); // packet ID
-	const std::map<int, LEDStrip *>& ledStrips = controller.getLedStrips();
+	auto ledStrips = controller.getLedStrips();
 	output += shortToStr(ledStrips.size()); // first, the total number of LED strips
 	output += shortToStr(offset); // second, the offset for the packet
 	auto itr = ledStrips.cbegin();
@@ -69,7 +69,7 @@ std::string SendColorSequenceDataPacket::getData() {
 	// Packet ID
 	output += static_cast<char>(251);
 	
-	const std::map<int, ColorSequence *>& colorSequences = controller.getColorSequences();
+	auto colorSequences = controller.getColorSequences();
 	output += shortToStr(colorSequences.size()); // first, the total number of LED strips
 	output += shortToStr(offset); // second, the offset for the packet
 	auto itr = colorSequences.cbegin();

@@ -39,16 +39,16 @@ Color * getColor(std::istream& data) {
 ColorSequence * getColorSequence(std::istream& data) {
 	// These values are one more than the color sequence data
 	// index due to the canOverwrite value.
-	bool canOverwrite = data.get();
+	data.get(); // unused, for canOverwrite
 
-	int sequenceID = getShort(data);
+	std::string sequenceID = getString(data);
 	Serial.print("Sequence ID: ");
-	Serial.println(sequenceID);
+	Serial.println(sequenceID.c_str());
 	
 	int numItems = data.get();
 	Serial.print("Number of items: ");
 	Serial.println(numItems);
-	int sequenceType = data.get();
+	data.get(); // unused, for sequenceType
 	int sustainTime = getShort(data);
 	Serial.print("Sustain time: ");
 	Serial.println(sustainTime);
@@ -69,9 +69,9 @@ ColorSequence * getColorSequence(std::istream& data) {
 }
 
 LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
-	int id = getShort(data);
+	std::string id = getString(data);
 	int numColors = data.get();
-	int currColorSequenceID = getShort(data);
+	std::string currColorSequenceID = getString(data);
 	bool isOn = data.get() != 0;
 	int brightness = getShort(data);
 	bool isTemporaryColorActive = data.get() != 0;
@@ -108,7 +108,7 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	strip->setCurrentBrightness(brightness);
 	
 	// attempts to get and set the color sequence if it is non-zero
-	if (currColorSequenceID != 0) {
+	if (currColorSequenceID != "") {
 		strip->setColorSequence(controller.getColorSequence(currColorSequenceID));
 	}
 
@@ -139,19 +139,19 @@ std::string colorToStr(Color * color) {
 
 std::string ledStripToStr(LEDStrip * strip) {
 	// first the ID
-	std::string result = shortToStr(strip->getID());
+	std::string result = strToStr(strip->getID());
 	// Next, the number of colors in the LED strip
 	int numColors = strip->getNumColors();
 	result += static_cast<char>(numColors);
 	// Next, the current color sequence.
 	ColorSequence * currSequence = strip->getCurrentColorSequence();
-	int colorSequence;
+	std::string colorSequence;
 	if (currSequence == nullptr) {
-		colorSequence = 0;
+		colorSequence = "";
 	} else {
 		colorSequence = currSequence->getID();
 	}
-	result += shortToStr(colorSequence);
+	result += strToStr(colorSequence);
 	result += static_cast<char>(strip->isOn());
 	result += shortToStr(strip->getCurrentBrightness());
 
@@ -173,7 +173,7 @@ std::string ledStripToStr(LEDStrip * strip) {
 
 std::string colorSequenceToStr(ColorSequence * sequence) {
 	// First, the color sequence ID
-	std::string result = shortToStr(sequence->getID());
+	std::string result = strToStr(sequence->getID());
 
 	const std::vector<Color *>& colors = sequence->getColors();
 	// Number of items in the color sequence

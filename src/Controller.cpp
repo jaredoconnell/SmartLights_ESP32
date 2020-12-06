@@ -141,7 +141,7 @@ void Controller::addColorSequence(ColorSequence * seq) {
 	colorSequences[seq->getID()] = seq;
 }
 
-ColorSequence * Controller::getColorSequence(int id) {
+ColorSequence * Controller::getColorSequence(std::string& id) {
 	auto itr = colorSequences.find(id);
 	if (itr == colorSequences.end()) {
 		return nullptr;
@@ -150,7 +150,7 @@ ColorSequence * Controller::getColorSequence(int id) {
 	}
 }
 
-LEDStrip * Controller::getLEDStrip(int id) {
+LEDStrip * Controller::getLEDStrip(std::string& id) {
 	auto itr = ledStrips.find(id);
 	if (itr == ledStrips.end()) {
 		return nullptr;
@@ -159,11 +159,11 @@ LEDStrip * Controller::getLEDStrip(int id) {
 	}
 }
 
-const std::map<int, ColorSequence *>& Controller::getColorSequences() {
+const std::map<std::string, ColorSequence *>& Controller::getColorSequences() {
 	return colorSequences;
 }
 
-const std::map<int, LEDStrip *>& Controller::getLedStrips() {
+const std::map<std::string, LEDStrip *>& Controller::getLedStrips() {
 	return ledStrips;
 }
 
@@ -198,7 +198,7 @@ void Controller::queuePacket(SendablePacket * packetToSend) {
 
 void Controller::sendLEDStrips() {
 	// Number of packets needed is the rounded up divided by 6.
-	int numLEDStripsPerPacket = 6;
+	int numLEDStripsPerPacket = 3;
 	int numPackets = (ledStrips.size() + numLEDStripsPerPacket - 1) / numLEDStripsPerPacket;
 	for (int i = 0; i < numPackets; i++) {
 		queuePacket(new SendLEDStripDataPacket(*this, i * numLEDStripsPerPacket, numLEDStripsPerPacket));
@@ -207,7 +207,7 @@ void Controller::sendLEDStrips() {
 
 void Controller::sendColorSequences() {
 	// Number of packets needed is the rounded up divided by 6.
-	int numColorSequencesPerPacket = 6;
+	int numColorSequencesPerPacket = 3;
 	int numPackets = (colorSequences.size() + numColorSequencesPerPacket - 1) / numColorSequencesPerPacket;
 	for (int i = 0; i < numPackets; i++) {
 		queuePacket(new SendColorSequenceDataPacket(*this, i * numColorSequencesPerPacket, numColorSequencesPerPacket));

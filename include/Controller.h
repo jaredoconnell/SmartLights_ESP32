@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <map>
+#include <string>
 #include <BLEServer.h>
 #include "pins/PinManager.h"
 
@@ -18,8 +19,8 @@ class Controller : public BLEServerCallbacks, public BLECharacteristicCallbacks 
 private:
 	std::map<std::string, Setting *> settings;
 
-	std::map<int, ColorSequence *> colorSequences;
-	std::map<int, LEDStrip *> ledStrips;
+	std::map<std::string, ColorSequence *> colorSequences;
+	std::map<std::string, LEDStrip *> ledStrips;
 
 	PinManager pinManager;
 	
@@ -52,13 +53,13 @@ public:
 	 */
 	void addColorSequence(ColorSequence * seq);
 
-	ColorSequence * getColorSequence(int id);
-	LEDStrip * getLEDStrip(int id);
+	ColorSequence * getColorSequence(std::string& id);
+	LEDStrip * getLEDStrip(std::string& id);
 
 	PinManager& getPinManager();
 
-	const std::map<int, ColorSequence *>& getColorSequences();
-	const std::map<int, LEDStrip *>& getLedStrips();
+	const std::map<std::string, ColorSequence *>& getColorSequences();
+	const std::map<std::string, LEDStrip *>& getLedStrips();
 
 	void saveColorSequences();
 	void loadColorSequences();

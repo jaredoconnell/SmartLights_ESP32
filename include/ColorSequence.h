@@ -2,12 +2,13 @@
 #define COLORSEQUENCE_H
 
 #include <vector>
+#include <string>
 #include <memory>
 #include "Color.h"
 
 class ColorSequence {
 private:
-	int id;
+	std::string id;
 	std::string name;
 	// Times are in frames.
 	int sustainTime;
@@ -19,8 +20,8 @@ private:
 
 	std::shared_ptr<Color> currentColor;
 public:
-	ColorSequence(int id, std::vector<Color*> colors, int sustainTime, int transitionTime, int transitionTypeID, std::string name);
-	int getID();
+	ColorSequence(std::string id, std::vector<Color*> colors, int sustainTime, int transitionTime, int transitionTypeID, std::string name);
+	std::string& getID();
 	std::string& getName();
 
 	void updateCurrentColor(int frames);

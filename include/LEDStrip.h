@@ -42,7 +42,7 @@ public:
 class LEDStrip {
 private:
 	// Unchanging data
-	int id;
+	std::string id;
 	int numColors;
 	// Array of the colors
 	LEDStripComponent ** components;
@@ -78,12 +78,12 @@ private:
 	 */
 	void turnOff();
 public:
-	LEDStrip(int id, int numColors, LEDStripComponent ** components, std::string name);
+	LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name);
 
 	/**
 	 * @return The ID of the LED strip.
 	 */
-	int getID();
+	std::string& getID();
 
 	/**
 	 * @return The number of components in the LED strip.
