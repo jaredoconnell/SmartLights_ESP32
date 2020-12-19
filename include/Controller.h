@@ -6,6 +6,7 @@
 #include <string>
 #include <BLEServer.h>
 #include "pins/PinManager.h"
+#include "ScheduledChange.h"
 
 class LEDStrip;
 class ColorSequence;
@@ -80,6 +81,16 @@ public:
 	 * Sends all settings in as many packets as needed.
 	 */
 	void sendSettings();
+
+	/**
+	 * Sends all scheduled changes from all LED Strips
+	 */
+	void sendScheduledChanges();
+
+	/**
+	 * Combines all scheduled changes from all LED Strips
+	 */
+	std::vector<ScheduledChange*> getAllScheduledChanges();
 
 	/**
 	 * Queues the packet. It will be deleted after it is successfully recieved by the

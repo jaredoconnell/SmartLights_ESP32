@@ -255,11 +255,18 @@ void LEDStrip::setOnState(bool on) {
 }
 
 void LEDStrip::setCurrentBrightness(int brightness) {
+	Serial.printf("Brightness set to %d", brightness);
 	bool changed = brightness != this->currentBrightness;
 	this->currentBrightness = brightness;
 
 	if (currentColor && changed) {
 		displayColor(currentColor.get());
+	}
+}
+
+void LEDStrip::updateSchedules(tm& time) {
+	for (auto change : scheduledChanges) {
+		change.second->check(time);
 	}
 }
 
@@ -296,6 +303,34 @@ void LEDStrip::flash(int tick) {
 	for (int i = 0; i < numColors; i++) {
 		components[i]->setBrightness(brightness);
 	}
+}
+
+ScheduledChange* LEDStrip::getScheduledChange(std::string id) {
+	auto itr = scheduledChanges.find(id);
+	if (itr == scheduledChanges.end()) {
+		return nullptr;
+	} else {
+		return itr->second;
+	}
+}
+void LEDStrip::addScheduledChange(ScheduledChange * change) {
+	// check for duplicates
+	auto itr = scheduledChanges.find(change->id);
+	if (itr == scheduledChanges.end()) {
+		scheduledChanges[change->id] = change;
+	} else {
+		// It already exists. If it's the same instance, do
+		// nothing since it's already added.
+		// Else delete old, and add new.
+		if (itr->second != change) {
+			delete itr->second;
+			scheduledChanges[change->id] = change;
+		}
+	}
+}
+
+const std::map<std::string, ScheduledChange*>& LEDStrip::getScheduledChanges() {
+	return scheduledChanges;
 }
 
 // ------------------------- //

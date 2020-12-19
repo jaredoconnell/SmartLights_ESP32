@@ -5,6 +5,7 @@ class LEDStrip;
 class ColorSequence;
 class Color;
 class Controller;
+class ScheduledChange;
 
 /**
  * Used for getting a short from two bytes from the stream
@@ -12,6 +13,21 @@ class Controller;
  * @param stream: A stream that has a short (2 bytes).
  */
 int getShort(std::istream& stream);
+
+
+/**
+ * Used for getting a long from eight bytes from the stream
+ * that are big-endian.
+ * @param stream: A stream that has a long (8 bytes).
+ */
+long long get64BitLong(std::istream& stream);
+
+/**
+ * Used for getting an int from four bytes from the stream
+ * that are big-endian.
+ * @param stream: A stream that has a long (4 bytes).
+ */
+long get32BitInt(std::istream& data);
 
 /**
  * This string is in the form of one byte specifying the length,
@@ -51,6 +67,13 @@ ColorSequence * getColorSequence(std::istream& stream);
 LEDStrip * getLEDStrip(std::istream& stream, Controller& controller);
 
 /**
+ * @param stream: An istream that has the data for a scheduled change.
+ * 
+ * @return A scheduled change that reflects what the binary data specified.
+ */
+ScheduledChange * getScheduledChange(std::istream& stream, Controller& controller);
+
+/**
  * @return the binary representation of a short.
  */
 std::string strToStr(std::string str);
@@ -74,3 +97,8 @@ std::string ledStripToStr(LEDStrip * strip);
  * @return the binary representation of the given Color Sequence.
  */
 std::string colorSequenceToStr(ColorSequence *);
+
+/**
+ * @return the binary representation of the given Scheduled Change.
+ */
+std::string scheduledSequenceToStr(ScheduledChange * change);

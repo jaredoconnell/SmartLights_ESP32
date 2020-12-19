@@ -2,11 +2,14 @@
 #define SENDABLE_PACKETS_H
 
 #include <string>
+#include <memory>
+#include <vector>
 
 class Controller;
 class Color;
 class LEDStrip;
 class ColorSequence;
+class ScheduledChange;
 
 class SendablePacket {
 	protected:
@@ -41,6 +44,16 @@ class SendSettingsPacket : public SendablePacket {
 		int offset, quantity;
 	public:
 		SendSettingsPacket(Controller & controller, int offset, int quantity);
+		virtual std::string getData();
+};
+
+class SendScheduledChangesPacket : public SendablePacket {
+	private:
+		std::vector<ScheduledChange*> changes;
+		int offset, quantity;
+	public:
+		SendScheduledChangesPacket(Controller & controller,
+			std::vector<ScheduledChange*>, int offset, int quantity);
 		virtual std::string getData();
 };
 

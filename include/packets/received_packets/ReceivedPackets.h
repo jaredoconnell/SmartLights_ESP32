@@ -98,4 +98,29 @@ class SetColorPacket : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+class SetTimePacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		SetTimePacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
+class ScheduleLEDStripChange : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		ScheduleLEDStripChange(Controller & controller);
+		virtual void parse(std::istream &);
+
+};
+
+class GetScheduledChangesPacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		GetScheduledChangesPacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

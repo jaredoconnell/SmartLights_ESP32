@@ -123,3 +123,29 @@ std::string SendSettingsPacket::getData() {
 
 	return output;
 }
+
+// ------------------------------------------------------------------------------ //
+SendScheduledChangesPacket::SendScheduledChangesPacket(Controller & controller,
+			std::vector<ScheduledChange*> changes, int offset, int quantity)
+	: SendablePacket(controller), changes(changes), offset(offset), quantity(quantity)
+{}
+
+std::string SendScheduledChangesPacket::getData() {
+	std::string output = "";
+	// Packet ID
+	output += static_cast<char>(250);
+
+	output += shortToStr(changes.size()); // first, the total number of LED strips
+	output += shortToStr(offset); // second, the offset for the packet
+	int actualQuantity = 0;
+	std::string componentsStr = "";
+	for (int i = 0; i < quantity && i + offset < changes.size(); i++) {
+		ScheduledChange * scheduledChange = changes.at(i);
+		componentsStr += scheduledSequenceToStr(scheduledChange);
+		actualQuantity++;
+	}
+	output += static_cast<char>(actualQuantity); // third, the quantity sent in this packet
+	output += componentsStr;
+
+	return output;
+}

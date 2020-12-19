@@ -8,6 +8,8 @@
 #include "packets/sendable_packets/SendablePackets.h"
 #include "Serialization.h"
 
+#include <sys/time.h>
+
 // Send debug messages
 #include <HardwareSerial.h>
 
@@ -178,3 +180,46 @@ void SetColorPacket::parse(std::istream &data) {
 		Serial.println(LEDStripID.c_str());
 	}
 }
+// ---------------------------------------------------- //
+
+SetTimePacket::SetTimePacket(Controller & controller)
+	: controller(controller)
+{}
+
+void SetTimePacket::parse(std::istream &data) {
+	unsigned long long sec = get64BitLong(data); // make time_t
+	struct timeval tv;
+	tv.tv_sec = sec;
+	tv.tv_usec = 0;
+	settimeofday(&tv, NULL);
+	Serial.println("Time set");
+}
+// ---------------------------------------------------- //
+
+ScheduleLEDStripChange::ScheduleLEDStripChange(Controller & controller)
+	: controller(controller)
+{}
+
+void ScheduleLEDStripChange::parse(std::istream &data) {
+	ScheduledChange * sc = getScheduledChange(data, controller);
+	LEDStrip * ledStrip = controller.getLEDStrip(sc->ledStripID);
+	if (ledStrip != nullptr) {
+		ledStrip->addScheduledChange(sc);
+	} else {
+		Serial.println("Cannot find LED Strip, so cannot do anything!");
+	}
+
+	Serial.println("Processed scheduled change\n");
+}
+
+// ---------------------------------------------------- //
+
+GetScheduledChangesPacket::GetScheduledChangesPacket(Controller & controller)
+	: controller(controller)
+{}
+void GetScheduledChangesPacket::parse(std::istream &data) {
+	Serial.println("Got packet get scheduled changes");
+	controller.sendScheduledChanges();
+	Serial.println("Done.");
+}
+

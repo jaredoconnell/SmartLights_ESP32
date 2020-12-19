@@ -14,7 +14,32 @@
 int getShort(std::istream& data) {
 	// Big endian, so the first byte is the one
 	// representing the more significant number.
-	return data.get() * 255 + data.get();
+	return data.get() * 256 + data.get();
+}
+long long get64BitLong(std::istream& data) {
+	// Big endian, so the first byte is the one
+	// representing the more significant number.
+	unsigned long long value = 0;
+	unsigned long long tmp;
+	for (int i = 7; i >= 0; i--) {
+		tmp = data.get();
+		tmp <<= (i * 8);
+		value += tmp;
+	}
+	return value;
+}
+
+long get32BitInt(std::istream& data) {
+	// Big endian, so the first byte is the one
+	// representing the more significant number.
+	unsigned long long value = 0;
+	unsigned long long tmp;
+	for (int i = 3; i >= 0; i--) {
+		tmp = data.get();
+		tmp <<= (i * 8);
+		value += tmp;
+	}
+	return value;
 }
 
 std::string getString(std::istream& data) {
@@ -115,6 +140,78 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	return strip;
 }
 
+ScheduledChange * getScheduledChange(std::istream& data, Controller& controller) {
+	std::string id = getString(data);
+	std::string name = getString(data);
+	ScheduledChange * sc = new ScheduledChange(controller, id, name);
+	Serial.printf("ID: %s, Name: %s\n", id.c_str(), name.c_str());
+	int hour = data.get();
+	int minute = data.get();
+	int second = data.get();
+	long runtime = get32BitInt(data);
+	Serial.printf("Hour: %d, Minute: %d, Second: %d, Runtime: %l\n", hour, minute, second, runtime);
+	sc->hour = hour;
+	sc->minute = minute;
+	sc->second = second;
+	sc->secondsUntilOff = runtime;
+	int type = data.get();
+	if (type == 0) {
+		sc->isSpecificDate = true;
+		// Specific dates
+		int yearsSince1900 = data.get();
+		int monthOfYear = data.get();
+		int dayOfMonth = data.get();
+		int daysRepeatInterval = getShort(data);
+
+		Serial.printf("Years: %d, Month: %d, Day: %d, Interval: %d\n",
+			yearsSince1900, monthOfYear, dayOfMonth, daysRepeatInterval);
+		sc->year = yearsSince1900;
+		sc->month = monthOfYear;
+		sc->day = dayOfMonth;
+		sc->repeatInterval = daysRepeatInterval;
+	} else if (type == 1) {
+		sc->isSpecificDate = false;
+		// Days of week
+		int daysBitwise = data.get();
+		Serial.printf("Days of week\n");
+		sc->daysOfWeekBitwise = daysBitwise;
+	} else {
+		Serial.println("Unknown schedule type. Aborting.\n");
+		return nullptr;
+	}
+
+	std::string ledStripID = getString(data);
+	Serial.printf("LED Strip ID: %s\n", ledStripID.c_str());
+	sc->ledStripID = ledStripID;
+
+	int changes = data.get();
+	sc->changesBitwise = changes;
+	bool turnOn = changes & 0b00000001;
+	bool brightnessChanges = changes & 0b00000010;
+	bool colorChanges = changes & 0b00000100;
+	bool colorSequenceChanges = changes & 0b00001000;
+	Serial.printf("TurnOn: %d, BrightnessChange: %d, ColorChange: %d, SequenceChange: %d\n",
+		turnOn, brightnessChanges, colorChanges, colorSequenceChanges);
+
+
+	if (brightnessChanges) {
+		int newBrightness = getShort(data);
+		Serial.printf("New brightness: %d\n", newBrightness);
+		sc->newBrightness = newBrightness;
+	}
+	if (colorChanges){
+		Color *newColor = getColor(data);
+		Serial.printf("New color: %s\n", newColor->toString().c_str());
+		sc->newColor = newColor;
+	}
+	if (colorSequenceChanges) {
+		std::string newColorSequenceID = getString(data);
+		Serial.printf("New sequence ID: %s\n", newColorSequenceID.c_str());
+		sc->newColorSequenceID = newColorSequenceID;
+	}
+	return sc;
+}
+
 std::string strToStr(std::string str) {
 	return static_cast<char>(str.length()) + str;
 }
@@ -126,6 +223,20 @@ std::string shortToStr(int val) {
 	unsigned char higherBytes = static_cast<char>(val >> 8);
 	result += higherBytes;
 	result += lowerBytes;
+	return result;
+}
+
+std::string intToStr(int val) {
+	std::string result = "";
+	// Big endian.
+	unsigned char bytes1 = static_cast<char>(val);
+	unsigned char bytes2 = static_cast<char>(val >> 8);
+	unsigned char bytes3 = static_cast<char>(val >> 16);
+	unsigned char bytes4 = static_cast<char>(val >> 24);
+	result += bytes4;
+	result += bytes3;
+	result += bytes2;
+	result += bytes1;
 	return result;
 }
 
@@ -187,5 +298,37 @@ std::string colorSequenceToStr(ColorSequence * sequence) {
 		result += colorToStr(color);
 	}
 	result += strToStr(sequence->getName());
+	return result;
+}
+
+std::string scheduledSequenceToStr(ScheduledChange * change) {
+	std::string result = strToStr(change->id);
+	result += strToStr(change->name);
+	result += static_cast<char>(change->hour);
+	result += static_cast<char>(change->minute);
+	result += static_cast<char>(change->second);
+	result += intToStr(change->secondsUntilOff);
+
+	if (change->isSpecificDate) {
+		result += static_cast<char>(0);
+		result += static_cast<char>(change->year);
+		result += static_cast<char>(change->month);
+		result += static_cast<char>(change->day);
+		result += shortToStr(change->repeatInterval);
+	} else {
+		result += static_cast<char>(1);
+		result += static_cast<char>(change->daysOfWeekBitwise);
+	}
+	result += strToStr(change->ledStripID);
+	result += static_cast<char>(change->changesBitwise);
+	if (change->brightnessChanges()) {
+		result += shortToStr(change->newBrightness);
+	}
+	if (change->colorChanges()) {
+		result += colorToStr(change->newColor);
+	}
+	if (change->colorSequenceChanges()) {
+		result += strToStr(change->newColorSequenceID);
+	}
 	return result;
 }

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <sstream>
+#include <chrono>
 
 #include <Adafruit_PWMServoDriver.h>
 
@@ -31,11 +32,14 @@ Controller::Controller() {
 	packets[5] = new AddLEDStripPacket(*this);
 	packets[8] = new AddColorSequencePacket(*this);
 	packets[9] = new SetLEDStripColorSequencePacket(*this);
+	packets[10] = new ScheduleLEDStripChange(*this);
 	packets[12] = new GetColorSequencesPacket(*this);
+	packets[13] = new GetScheduledChangesPacket(*this);
 	packets[16] = new SetLEDStripBrightnessPacket(*this);
 	packets[17] = new GetSettingsPacket(*this);
 	packets[18] = new SetSettingPacket(*this);
 	packets[19] = new SetColorPacket(*this);
+	packets[20] = new SetTimePacket(*this);
 }
 
 
@@ -171,7 +175,32 @@ PinManager& Controller::getPinManager() {
 	return pinManager;
 }
 
+int lastSecond = 0;
+
 void Controller::onTick(int time) {
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+	time_t tt = std::chrono::system_clock::to_time_t(now);
+    tm utc_tm = *gmtime(&tt);
+	if (lastSecond != utc_tm.tm_sec) {
+		if (utc_tm.tm_sec == 0) {
+			Serial.print(utc_tm.tm_year + 1900);
+			Serial.print(" ");
+			Serial.print(utc_tm.tm_mon + 1);
+			Serial.print(" ");
+			Serial.print(utc_tm.tm_mday);
+			Serial.print(" ");
+			Serial.print(utc_tm.tm_hour);
+			Serial.print(" ");
+			Serial.print(utc_tm.tm_min);
+			Serial.print(" ");
+			Serial.println(utc_tm.tm_sec);
+		}
+		lastSecond = utc_tm.tm_sec;
+		for (auto ledstrip : ledStrips) {
+			ledstrip.second->updateSchedules(utc_tm);
+		}
+	}
+
 	for (auto sequence : colorSequences) {
 		sequence.second->updateCurrentColor(time);
 	}
@@ -211,6 +240,29 @@ void Controller::sendColorSequences() {
 	int numPackets = (colorSequences.size() + numColorSequencesPerPacket - 1) / numColorSequencesPerPacket;
 	for (int i = 0; i < numPackets; i++) {
 		queuePacket(new SendColorSequenceDataPacket(*this, i * numColorSequencesPerPacket, numColorSequencesPerPacket));
+	}
+}
+
+std::vector<ScheduledChange*> Controller::getAllScheduledChanges() {
+	std::vector<ScheduledChange*> all;
+	for (auto strip : ledStrips) {
+		for (auto sequence : strip.second->getScheduledChanges()) {
+			all.push_back(sequence.second);
+		}
+	}
+	return all;
+}
+
+
+void Controller::sendScheduledChanges() {
+	// Number of packets needed is the rounded up divided by 6.
+	int numChangesPerPacket = 3;
+	std::vector<ScheduledChange*> allChanges = getAllScheduledChanges();
+
+	int numPackets = (allChanges.size() + numChangesPerPacket - 1) / numChangesPerPacket;
+	for (int i = 0; i < numPackets; i++) {
+		// Remember, the allChanges vector must be copied to prevent lifetime issues
+		queuePacket(new SendScheduledChangesPacket(*this, allChanges, i * numChangesPerPacket, numChangesPerPacket));
 	}
 }
 

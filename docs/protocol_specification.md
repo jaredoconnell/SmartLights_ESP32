@@ -55,6 +55,47 @@ The number of bytes in the sequence is 44 + n * 3. If there are about 10 other b
 
 For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 139 bytes long. That means, with overhead, it is realistic to pack about 3 LED strips into a single packet.
 
+#### Scheduled Change
+| Size | Data Details |
+| --- | --- |
+| 37 Bytes | The ID of the schedule |
+| Up to 30 | The name of the schedule (max 29 chars) |
+| 1 Byte | The hour (0-23) it is scheduled at |
+| 1 Byte | The minute it is scheduled at (0-59) |
+| 1 Byte | The second it is scheduled at (0-59) |
+| 4 Bytes | The number of seconds it should stay on for (if turn on), or 0 for indefinite |
+| 1 Byte | The type of schedule. 0 for a specific dates, 1 for days of the week |
+Followed by the format for that type of schedule.
+If specific date:
+| Size | Data Details |
+| --- | --- |
+| 1 Byte | The year, in years since 1900 |
+| 1 Byte | The month zero-indexed (0-11) |
+| 1 Byte | The day of the month zero-indexed (0-31) |
+| 2 Bytes | 0 to not repeat, 1+ to repeat every X days |
+
+If days of the week:
+| Size | Data Details |
+| --- | --- |
+| 1 Byte | Bitwise representation of days of the week to work on. The right-most bit represents Sunday. The second from the left represents Friday. The left-most bit represents whether to repeat it |
+
+Followed by the applicable LED Strip:
+| Size | Data Details |
+| --- | --- |
+| 37 Bytes | The ID of the LED Strip |
+
+In the future, you will also be able to schedule groups of LED Strips
+
+Followed by the changes at this time:
+| Size | Data Details |
+| --- | --- |
+| 1 Byte | 0 for off, Bitwise for what changes. The right-most bit means on, the second from the right means the brightness changes, the third from the right means a new color, the fourth from the right means the color sequence changes. If the rightmost bit is 0, but the overall value is > 0, it will not turn it off, but instead it will just change it. |
+| 2 Bytes | If the brightness changes, the new brightness value between 0 and 4095 |
+| 3 Bytes | If the color changes, the new color RGB value |
+| 37 Bytes | If the color sequence changes, the ID of the new color sequence |
+
+The current max size per packet is 152. That means you can reasonably hold up to 3 per packet.
+
 ---
 
 ## Packet Format
@@ -121,9 +162,12 @@ Data:
 | 0 | 37 Bytes | The Color Strip ID |
 | 2 | 37 Bytes | The Color Sequence ID |
 
-Packet name: **Schedule LED Strip Sequence Change** \
+Packet name: **Schedule LED Strip Change** \
 Packet ID: 10 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Many Bytes | The schedule data as defined in the data types section. |
 
 Packet name: **Get Color Sequence ID for LED Strip** \
 Packet ID: 11 \
@@ -182,6 +226,12 @@ Data:
 Sets the color for the LED strip.
 The color will last the specified number of seconds, indefinitely if 0, except will change if the color sequence is set for the LED strip.
 
+Packet name: **Update Time** \
+Packet ID: 20 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Eight bytes | The epoch time in seconds |
 
 ---
 ### From ESP32 to phone:
@@ -227,7 +277,13 @@ Data:
 
 Packet name: **Scheduled Sequences List Response** \
 Packet ID: 250 \
-Data: TODO
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The number of Schedules |
+| 2 | Two bytes | The offset for this packet |
+| 4 | One byte | The number of schedules being sent in this packet |
+| * + 4 | Many bytes | The schedule data sequentially (as defined in the data types section) |
 
 
 Packet name: **Contents Version Number Response** \

@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include "ScheduledChange.h"
 
 #define MAX_BRIGHTNESS 4095
 
@@ -52,6 +53,10 @@ private:
 	std::vector<LEDStripComponent *> whiteComponents;
 	std::vector<LEDStripComponent *> singleColorComponents;
 	std::string name;
+
+    // Key: The ID of the scheduled change
+	// Value: The scheduled change itself
+	std::map<std::string, ScheduledChange*> scheduledChanges;
 
 	// Current state
 	std::shared_ptr<Color> currentColor;
@@ -153,6 +158,8 @@ public:
 	 */
 	void update(int tick);
 
+	void updateSchedules(tm& time);
+
 	/**
 	 * A simple method that toggles all components on and off based
 	 * on the current time. Used for when there are no color sequences.
@@ -172,6 +179,12 @@ public:
 	 * -2 means persistent temporary color
 	 */
 	int getTicksLeftForTempColor();
+
+	const std::map<std::string, ScheduledChange*>& getScheduledChanges();
+
+	ScheduledChange* getScheduledChange(std::string id);
+
+	void addScheduledChange(ScheduledChange *);
 };
 
 #endif
