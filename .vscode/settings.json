@@ -42,6 +42,8 @@
         "utility": "cpp",
         "typeinfo": "cpp",
         "chrono": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "thread": "cpp",
+        "mutex": "cpp"
     }
 }

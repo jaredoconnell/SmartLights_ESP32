@@ -3,13 +3,15 @@
 #include "ColorSequence.h"
 #include "pins/AddressablePin.h"
 
-#include <Adafruit_PWMServoDriver.h>
 // Send debug messages
 #include <HardwareSerial.h>
 #include <string>
+#include <mutex>
 
-LEDStrip::LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name)
-	: id(id), numColors(numColors), components(components), name(name)
+static std::mutex mutex;
+
+LEDStrip::LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name, Controller& controller)
+	: AbstractLEDStrip(id, name, controller), numColors(numColors), components(components)
 {
 	for (int i = 0; i < numColors; i++) {
 		std::shared_ptr<Color> color = components[i]->getColor();
@@ -21,10 +23,6 @@ LEDStrip::LEDStrip(std::string id, int numColors, LEDStripComponent ** component
 	}
 }
 
-std::string& LEDStrip::getID() {
-	return id;
-}
-
 int LEDStrip::getNumColors() {
 	return numColors;
 }
@@ -34,10 +32,6 @@ LEDStripComponent * LEDStrip::getComponent(int index) {
 	return components[index];
 }
 
-std::string& LEDStrip::getName() {
-	return name;
-}
-
 void LEDStrip::turnOff() {
 	for (int i = 0; i < numColors; i++) {
 		components[i]->setBrightness(0);
@@ -45,7 +39,7 @@ void LEDStrip::turnOff() {
 }
 
 
-void LEDStrip::displayColor(Color * color) {
+void LEDStrip::displayColor(std::shared_ptr<Color> color) {
 
 	if (!isToggledOn) {
 		turnOff();
@@ -197,21 +191,22 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 		brightness = 1.0;
 	brightness *= factor;
 
-	component->setBrightness(brightness);
+	double actualBrightness = component->setBrightness(brightness);
 
 	// Now subtract this strip's affect on the color components.
 	// This is to allow several LED strip colors to contribute
 	// to the overall color reproduction.
 	// (strip color brightness) * (strip set brightness) = (actual brightness)
-	red -= componentColor->getRed() * brightness;
-	green -= componentColor->getGreen() * brightness;
-	blue -= componentColor->getBlue() * brightness;
+	red -= componentColor->getRed() * actualBrightness;
+	green -= componentColor->getGreen() * actualBrightness;
+	blue -= componentColor->getBlue() * actualBrightness;
 }
 
-void LEDStrip::persistColor(Color * color, int seconds) {
-	this->currentColor = std::shared_ptr<Color>(color);
+void LEDStrip::persistColor(std::shared_ptr<Color> color, int seconds) {
+	this->currentColor = color;
 	if (seconds == 0) {
-		persistentColor = std::make_shared<Color>(color);
+		persistentColor = std::make_shared<Color>(*color);
+		this->colorSequence = nullptr;
 		ticksLeftToPersist = -2;
 	} else {
 		ticksLeftToPersist = seconds * 60;
@@ -219,7 +214,7 @@ void LEDStrip::persistColor(Color * color, int seconds) {
 	displayColor(color);
 }
 
-void LEDStrip::setColorSequence(ColorSequence * colorSequence) {
+void LEDStrip::setColorSequence(std::shared_ptr<ColorSequence> colorSequence) {
 	this->colorSequence = colorSequence;
 	ticksLeftToPersist = -1;
 	persistentColor = nullptr;
@@ -233,7 +228,7 @@ int LEDStrip::getTicksLeftForTempColor() {
 	return this->ticksLeftToPersist;
 }
 
-ColorSequence * LEDStrip::getCurrentColorSequence() {
+std::shared_ptr<ColorSequence> LEDStrip::getCurrentColorSequence() {
 	return this->colorSequence;
 }
 
@@ -250,7 +245,7 @@ void LEDStrip::setOnState(bool on) {
 	this->isToggledOn = on;
 
 	if (currentColor && changed) {
-		displayColor(currentColor.get());
+		displayColor(currentColor);
 	}
 }
 
@@ -260,13 +255,7 @@ void LEDStrip::setCurrentBrightness(int brightness) {
 	this->currentBrightness = brightness;
 
 	if (currentColor && changed) {
-		displayColor(currentColor.get());
-	}
-}
-
-void LEDStrip::updateSchedules(tm& time) {
-	for (auto change : scheduledChanges) {
-		change.second->check(time);
+		displayColor(currentColor);
 	}
 }
 
@@ -277,7 +266,7 @@ void LEDStrip::update(int tick) {
 			// The temp color is over, but there is a persistent color ready
 			ticksLeftToPersist = -2;
 			currentColor = std::make_shared<Color>(persistentColor.get());
-			displayColor(currentColor.get());
+			displayColor(currentColor);
 		}
 	} else if (ticksLeftToPersist == -2) {
 		// Persist
@@ -286,7 +275,7 @@ void LEDStrip::update(int tick) {
 		if (color && (!currentColor || !color->equals(currentColor.get()))) {
 			currentColor = color;
 
-			displayColor(currentColor.get());
+			displayColor(currentColor);
 		}
 	} else {
 		flash(tick);
@@ -294,50 +283,19 @@ void LEDStrip::update(int tick) {
 }
 
 void LEDStrip::flash(int tick) {
-	double brightness;
-	if (tick % 120 < 60) {
-		brightness = 1.0;
-	} else {
-		brightness = 0.0;
-	}
 	for (int i = 0; i < numColors; i++) {
-		components[i]->setBrightness(brightness);
+		if (((tick / 60) % (numColors + 1)) == i)
+			components[i]->setBrightness(1);
+		else
+			components[i]->setBrightness(0);
 	}
-}
-
-ScheduledChange* LEDStrip::getScheduledChange(std::string id) {
-	auto itr = scheduledChanges.find(id);
-	if (itr == scheduledChanges.end()) {
-		return nullptr;
-	} else {
-		return itr->second;
-	}
-}
-void LEDStrip::addScheduledChange(ScheduledChange * change) {
-	// check for duplicates
-	auto itr = scheduledChanges.find(change->id);
-	if (itr == scheduledChanges.end()) {
-		scheduledChanges[change->id] = change;
-	} else {
-		// It already exists. If it's the same instance, do
-		// nothing since it's already added.
-		// Else delete old, and add new.
-		if (itr->second != change) {
-			delete itr->second;
-			scheduledChanges[change->id] = change;
-		}
-	}
-}
-
-const std::map<std::string, ScheduledChange*>& LEDStrip::getScheduledChanges() {
-	return scheduledChanges;
 }
 
 // ------------------------- //
 // -- LED Strip Component -- //
 // ------------------------- //
 
-LEDStripComponent::LEDStripComponent(std::shared_ptr<AddressablePin> pin, Color * color)
+LEDStripComponent::LEDStripComponent(std::shared_ptr<AddressablePin> pin, std::shared_ptr<Color> color)
 	: pin(pin), color(color)
 {}
 
@@ -349,19 +307,20 @@ std::shared_ptr<Color> LEDStripComponent::getColor() {
 	return color;
 }
 
-void LEDStripComponent::setBrightness(double brightness) {
+double LEDStripComponent::setBrightness(double brightness) {
 	if (brightness == -0.0) {
 		brightness = 0;
 	}
 	if (brightness > 1.0 || (brightness <= -0.000000001)) {
 		Serial.printf("Invalid brightness value %f\n", brightness);
-		return;
+		return 0;
 	}
 
 	if (pin) {
-		pin->setPWMValue(brightness);
+		std::lock_guard<std::mutex> lk(mutex);
+		return pin->setPWMValue(brightness);
 	} else {
 		Serial.println("driver null in setBrightness");
-		return;
+		return 0;
 	}
 }

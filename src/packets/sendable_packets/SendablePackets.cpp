@@ -34,21 +34,21 @@ std::string SendDriverDataPacket::getData() {
 }
 
 // ------------------------------------------------------------------------------ //
-SendLEDStripDataPacket::SendLEDStripDataPacket(Controller & controller, int offset, int quantity)
-	: SendablePacket(controller), offset(offset), quantity(quantity)
+SendLEDStripDataPacket::SendLEDStripDataPacket(Controller & controller,
+	std::shared_ptr<std::map<std::string, LEDStrip *>> strips, int offset, int quantity)
+	: SendablePacket(controller), strips(strips), offset(offset), quantity(quantity)
 {}
 
 std::string SendLEDStripDataPacket::getData() {
 	std::string output = "";
 	output += static_cast<char>(254); // packet ID
-	auto ledStrips = controller.getLedStrips();
-	output += shortToStr(ledStrips.size()); // first, the total number of LED strips
+	output += shortToStr(strips->size()); // first, the total number of LED strips
 	output += shortToStr(offset); // second, the offset for the packet
-	auto itr = ledStrips.cbegin();
+	auto itr = strips->cbegin();
 	std::advance(itr, offset);
 	int actualQuantity = 0;
 	std::string componentsStr = "";
-	for (int i = 0; i < quantity && itr != ledStrips.cend(); i++) {
+	for (int i = 0; i < quantity && itr != strips->cend(); i++) {
 		LEDStrip * ledStrip = (* itr++).second;
 		componentsStr += ledStripToStr(ledStrip);
 		actualQuantity++;
@@ -77,7 +77,7 @@ std::string SendColorSequenceDataPacket::getData() {
 	int actualQuantity = 0;
 	std::string componentsStr = "";
 	for (int i = 0; i < quantity && itr != colorSequences.cend(); i++) {
-		ColorSequence * colorSequence = (* itr++).second;
+		std::shared_ptr<ColorSequence> colorSequence = (* itr++).second;
 		componentsStr += colorSequenceToStr(colorSequence);
 		actualQuantity++;
 	}
@@ -146,6 +146,28 @@ std::string SendScheduledChangesPacket::getData() {
 	}
 	output += static_cast<char>(actualQuantity); // third, the quantity sent in this packet
 	output += componentsStr;
+
+	return output;
+}
+// ------------------------------------------------------------------------------ //
+SendLEDStripGroupsPacket::SendLEDStripGroupsPacket(Controller & controller,
+			std::shared_ptr<std::map<std::string, LEDStripGroup*>> groups, int index)
+	: SendablePacket(controller), groups(groups), index(index)
+{}
+
+std::string SendLEDStripGroupsPacket::getData() {
+	std::string output = "";
+	// Packet ID
+	output += static_cast<char>(245);
+
+	auto itr = groups->cbegin();
+	std::advance(itr, index);
+
+	output += shortToStr(groups->size()); // first, the total number of LED strip groups
+	output += shortToStr(index); // second, the offset for the packet
+	LEDStripGroup * group = (* itr++).second;
+
+	output += ledStripGroupToStr(group);
 
 	return output;
 }

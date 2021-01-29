@@ -3,7 +3,7 @@
 #include "Color.h"
 #include "ColorSequence.h"
 #include "Controller.h"
-#include "LEDStrip.h"
+#include "AbstractLEDStrip.h"
 #include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "Serialization.h"
@@ -95,9 +95,9 @@ void SetLEDStripColorSequencePacket::parse(std::istream &data) {
 	std::string LEDStripID = getString(data);
 	std::string colorSeqID = getString(data);
 
-	ColorSequence * seq = controller.getColorSequence(colorSeqID);
+	std::shared_ptr<ColorSequence> seq = controller.getColorSequence(colorSeqID);
 	if (seq != nullptr) {
-		LEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
+		AbstractLEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
 		if (ledStrip != nullptr) {
 			ledStrip->setColorSequence(seq);				
 		} else {
@@ -122,7 +122,11 @@ void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 	bool isOn = data.get();
 	int brightness = getShort(data);
 
-	LEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
+	AbstractLEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
+	if (ledStrip == nullptr) {
+		ledStrip = controller.getLEDStrip(LEDStripID);
+	}
+
 	if (ledStrip != nullptr) {
 		ledStrip->setCurrentBrightness(brightness);				
 		ledStrip->setOnState(isOn);
@@ -167,11 +171,12 @@ SetColorPacket::SetColorPacket(Controller & controller)
 {}
 
 void SetColorPacket::parse(std::istream &data) {
+	Serial.printf("Free memory %d\n", xPortGetFreeHeapSize());
 	std::string LEDStripID = getString(data);
-	Color * color = getColor(data);
+	std::shared_ptr<Color> color = getColor(data);
 	int seconds = getShort(data);
 
-	LEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
+	AbstractLEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
 	if (ledStrip != nullptr) {
 		ledStrip->persistColor(color, seconds);
 	} else {
@@ -202,7 +207,7 @@ ScheduleLEDStripChange::ScheduleLEDStripChange(Controller & controller)
 
 void ScheduleLEDStripChange::parse(std::istream &data) {
 	ScheduledChange * sc = getScheduledChange(data, controller);
-	LEDStrip * ledStrip = controller.getLEDStrip(sc->ledStripID);
+	AbstractLEDStrip * ledStrip = controller.getLEDStrip(sc->ledStripID);
 	if (ledStrip != nullptr) {
 		ledStrip->addScheduledChange(sc);
 	} else {
@@ -220,6 +225,18 @@ GetScheduledChangesPacket::GetScheduledChangesPacket(Controller & controller)
 void GetScheduledChangesPacket::parse(std::istream &data) {
 	Serial.println("Got packet get scheduled changes");
 	controller.sendScheduledChanges();
+	Serial.println("Done.");
+}
+
+
+// ---------------------------------------------------- //
+
+GetLedStripGroupsPacket::GetLedStripGroupsPacket(Controller & controller)
+	: controller(controller)
+{}
+void GetLedStripGroupsPacket::parse(std::istream &data) {
+	Serial.println("Got packet get led strip groups");
+	controller.sendLEDStripGroups();
 	Serial.println("Done.");
 }
 

@@ -9,7 +9,7 @@ private:
 	int pinNum;
 public:
 	ESP32Pin(int channel, int pinNum);
-	virtual void setPWMValue(double decimalDutyCycle);
+	virtual double setPWMValue(double decimalDutyCycle);
 	virtual int getI2CAddr();
 	virtual int getPinNum();
 };

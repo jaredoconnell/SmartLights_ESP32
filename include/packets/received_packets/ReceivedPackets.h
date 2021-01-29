@@ -123,4 +123,12 @@ class GetScheduledChangesPacket : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+class GetLedStripGroupsPacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		GetLedStripGroupsPacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

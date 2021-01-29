@@ -82,9 +82,7 @@ If days of the week:
 Followed by the applicable LED Strip:
 | Size | Data Details |
 | --- | --- |
-| 37 Bytes | The ID of the LED Strip |
-
-In the future, you will also be able to schedule groups of LED Strips
+| 37 Bytes | The ID of the LED Strip or group |
 
 Followed by the changes at this time:
 | Size | Data Details |
@@ -95,6 +93,14 @@ Followed by the changes at this time:
 | 37 Bytes | If the color sequence changes, the ID of the new color sequence |
 
 The current max size per packet is 152. That means you can reasonably hold up to 3 per packet.
+
+#### LED Strip Group
+| Size | Data Details |
+| --- | --- |
+| 37 Bytes | The ID of the group |
+| Up to 30 | The name of the schedule (max 29 chars) |
+| One Byte | The number of LED Strips in the group (max 10) |
+| 37 * n | String IDs of the LED Strips |
 
 ---
 
@@ -154,12 +160,12 @@ Data:
 | 0 | One byte | Overwrite boolean.<br>1 if it should overwrite the old ID at this value<br>0 if it should send an error response. |
 | 1 | 7 or more | The color sequence (as defined in the data types section) |
 
-Packet name: **Set LED Strip Color Sequence** \
+Packet name: **Set LED Strip or Group Color Sequence** \
 Packet ID: 9 \
 Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | 37 Bytes | The Color Strip ID |
+| 0 | 37 Bytes | The LED Strip or group ID |
 | 2 | 37 Bytes | The Color Sequence ID |
 
 Packet name: **Schedule LED Strip Change** \
@@ -192,7 +198,7 @@ Packet name: **Get Protocol ID** \
 Packet ID: 15 \
 Data: None
 
-Packet name: **Set LED Strip brightness** \
+Packet name: **Set LED Strip or Group brightness** \
 Packet ID: 16 \
 Data:
 | Index | Size | Data Details |
@@ -219,7 +225,7 @@ Packet ID: 19 \
 Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
-| 0 | 37 Bytes | The LED Strip ID |
+| 0 | 37 Bytes | The LED Strip or Group ID |
 | 2 | Three bytes | The Color |
 | 5 | Two bytes | The number of seconds |
 
@@ -232,6 +238,18 @@ Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
 | 0 | Eight bytes | The epoch time in seconds |
+
+Packet name: **Set LED Strip Group** \
+Packet ID: 21 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Many bytes | The LED Strip Group object (as defined in the data types section) |
+
+Packet name: **Get LED Strip Groups** \
+Packet ID: 22 \
+Data: None
+
 
 ---
 ### From ESP32 to phone:
@@ -309,3 +327,24 @@ Data:
 | ? + 4 | Many Bytes | The setting name |
 | ? | One Byte | 0 if this setting is a short, 1 if string. |
 | ? | Two or many | The setting value |
+
+Packet name: **Settings Response** \
+Packet ID: 246 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The number of Schedules |
+| 2 | Two bytes | The offset for this packet |
+| 4 | One byte | The number of schedules being sent in this packet |
+| * + 4 | Many bytes | The schedule data sequentially (as defined in the data types section) |
+
+Packet name: **List LED Strip Group Response** \
+Packet ID: 245 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Two bytes | The number of groups |
+| 2 | Two bytes | The index of this group |
+| 5 | Many bytes | The group data (as defined in the data types section). |
+
+One will be sent at a time, since a group can take up an entire packet.

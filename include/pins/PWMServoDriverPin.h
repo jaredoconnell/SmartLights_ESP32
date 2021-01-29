@@ -14,7 +14,7 @@ private:
 public:
 	PWMServoDriverPin(Adafruit_PWMServoDriver * driver, int i2cAddr, int pin);
 
-	virtual void setPWMValue(double decimalDutyCycle);
+	virtual double setPWMValue(double decimalDutyCycle);
 	virtual int getI2CAddr();
 	virtual int getPinNum();
 };

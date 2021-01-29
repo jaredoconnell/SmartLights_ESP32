@@ -9,6 +9,8 @@
 #include "ScheduledChange.h"
 
 class LEDStrip;
+class LEDStripGroup;
+class AbstractLEDStrip;
 class ColorSequence;
 
 class BLECharacteristic;
@@ -20,8 +22,9 @@ class Controller : public BLEServerCallbacks, public BLECharacteristicCallbacks 
 private:
 	std::map<std::string, Setting *> settings;
 
-	std::map<std::string, ColorSequence *> colorSequences;
-	std::map<std::string, LEDStrip *> ledStrips;
+	std::map<std::string, std::shared_ptr<ColorSequence>> colorSequences;
+	std::shared_ptr<std::map<std::string, LEDStrip *>> ledStrips;
+	std::shared_ptr<std::map<std::string, LEDStripGroup *>> ledStripGroups;
 
 	PinManager pinManager;
 	
@@ -50,17 +53,24 @@ public:
 	void addLEDStrip(LEDStrip * strip);
 
 	/**
+	 * Saves the LED strip group to the controller.
+	 * That will result in it being saved and updated every tick.
+	 */
+	void addLEDStripGroup(LEDStripGroup * group);
+
+	/**
 	 * Saves the color sequence to the controller.
 	 */
 	void addColorSequence(ColorSequence * seq);
 
-	ColorSequence * getColorSequence(std::string& id);
-	LEDStrip * getLEDStrip(std::string& id);
+	std::shared_ptr<ColorSequence> getColorSequence(std::string& id);
+	AbstractLEDStrip * getLEDStrip(std::string& id);
 
 	PinManager& getPinManager();
 
-	const std::map<std::string, ColorSequence *>& getColorSequences();
-	const std::map<std::string, LEDStrip *>& getLedStrips();
+	const std::map<std::string, std::shared_ptr<ColorSequence>>& getColorSequences();
+	std::shared_ptr<std::map<std::string, LEDStrip *>> getLedStrips();
+	std::shared_ptr<std::map<std::string, LEDStripGroup *>> getLedStripGroups();
 
 	void saveColorSequences();
 	void loadColorSequences();
@@ -71,6 +81,11 @@ public:
 	 * Sends all LED Strips in as many packets as needed.
 	 */
 	void sendLEDStrips();
+
+	/**
+	 * Sends all LED Strip Groups in as many packets as needed.
+	 */
+	void sendLEDStripGroups();
 
 	/**
 	 * Sends all color sequences in as many packets as needed.

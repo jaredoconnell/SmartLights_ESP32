@@ -11,9 +11,10 @@ ESP32Pin::ESP32Pin(int channel, int pin)
 	ledcAttachPin(pinNum, channel);
 }
 
-void ESP32Pin::setPWMValue(double decimalDutyCycle) {
-	int dutyCycle = round(65535 * decimalDutyCycle);
+double ESP32Pin::setPWMValue(double decimalDutyCycle) {
+	int dutyCycle = static_cast<int>(65535 * decimalDutyCycle);
 	ledcWrite(channel, dutyCycle);
+	return dutyCycle / 65535.0;
 }
 
 int ESP32Pin::getI2CAddr() {

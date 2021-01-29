@@ -1,6 +1,7 @@
 #include "Serialization.h"
 #include "ColorSequence.h"
 #include "LEDStrip.h"
+#include "LEDStripGroup.h"
 #include "Controller.h"
 
 #include <memory>
@@ -53,12 +54,12 @@ std::string getString(std::istream& data) {
 	return result;
 }
 
-Color * getColor(std::istream& data) {
+std::shared_ptr<Color> getColor(std::istream& data) {
 	int red = data.get();
 	int green = data.get();
 	int blue = data.get();
 
-	return new Color(red, green, blue);
+	return std::make_shared<Color>(red, green, blue);
 }
 
 ColorSequence * getColorSequence(std::istream& data) {
@@ -82,7 +83,7 @@ ColorSequence * getColorSequence(std::istream& data) {
 	Serial.println(transitionTime);
 	int transitionType = data.get();
 
-	std::vector<Color*> colors;
+	std::vector<std::shared_ptr<Color>> colors;
 	for (int i = 0; i < numItems; i++) {
 		colors.push_back(getColor(data));
 	}
@@ -101,14 +102,14 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 	int brightness = getShort(data);
 	bool isTemporaryColorActive = data.get() != 0;
 	int secondsLeftOfTempColor = getShort(data);
-	Color * temporaryColor = getColor(data);
+	std::shared_ptr<Color> temporaryColor = getColor(data);
 	
 	LEDStripComponent ** components = new LEDStripComponent*[numColors];
 	for (int i = 0; i < numColors; i++) {
 		
 		uint8_t driverID = data.get(); // May be 0 if not using PWMServoController
 		uint8_t driverPin = data.get();
-		Color * color = getColor(data);
+		std::shared_ptr<Color> color = getColor(data);
 
 		std::shared_ptr<AddressablePin> pin = controller.getPinManager().getPin(driverID, driverPin);
 		if (!pin) {
@@ -124,7 +125,7 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 
 	std::string name = getString(data);
 
-	LEDStrip * strip = new LEDStrip(id, numColors, components, name);
+	LEDStrip * strip = new LEDStrip(id, numColors, components, name, controller);
 
 	strip->setOnState(isOn);
 	if (isTemporaryColorActive) {
@@ -149,7 +150,7 @@ ScheduledChange * getScheduledChange(std::istream& data, Controller& controller)
 	int minute = data.get();
 	int second = data.get();
 	long runtime = get32BitInt(data);
-	Serial.printf("Hour: %d, Minute: %d, Second: %d, Runtime: %l\n", hour, minute, second, runtime);
+	Serial.printf("Hour: %d, Minute: %d, Second: %d, Runtime: %ld\n", hour, minute, second, runtime);
 	sc->hour = hour;
 	sc->minute = minute;
 	sc->second = second;
@@ -200,7 +201,7 @@ ScheduledChange * getScheduledChange(std::istream& data, Controller& controller)
 		sc->newBrightness = newBrightness;
 	}
 	if (colorChanges){
-		Color *newColor = getColor(data);
+		std::shared_ptr<Color> newColor = getColor(data);
 		Serial.printf("New color: %s\n", newColor->toString().c_str());
 		sc->newColor = newColor;
 	}
@@ -240,7 +241,7 @@ std::string intToStr(int val) {
 	return result;
 }
 
-std::string colorToStr(Color * color) {
+std::string colorToStr(std::shared_ptr<Color> color) {
 	std::string result = "";
 	result += static_cast<char>(color->getRed());
 	result += static_cast<char>(color->getGreen());
@@ -255,7 +256,7 @@ std::string ledStripToStr(LEDStrip * strip) {
 	int numColors = strip->getNumColors();
 	result += static_cast<char>(numColors);
 	// Next, the current color sequence.
-	ColorSequence * currSequence = strip->getCurrentColorSequence();
+	std::shared_ptr<ColorSequence> currSequence = strip->getCurrentColorSequence();
 	std::string colorSequence;
 	if (currSequence == nullptr) {
 		colorSequence = "";
@@ -269,24 +270,44 @@ std::string ledStripToStr(LEDStrip * strip) {
 	int persistentColorTicksLeft = strip->getTicksLeftForTempColor();
 	result += static_cast<char>(persistentColorTicksLeft != -1 ? 1 : 0);
 	result += shortToStr(persistentColorTicksLeft < 0 ? 0 : persistentColorTicksLeft / 60);
-	result += colorToStr(strip->getDisplayedColor().get());
+	if (strip->getDisplayedColor()) {
+		result += colorToStr(strip->getDisplayedColor());
+	} else {
+		std::shared_ptr<Color> daylight = std::make_shared<Color>(5000);
+		result += colorToStr(daylight);
+	}
 	// Next is the components.
 	for (int i = 0; i < numColors; i++) {
 		LEDStripComponent * component = strip->getComponent(i);
 		// Next, the driver ID
 		result += static_cast<char>(component->getPin()->getI2CAddr());
 		result += static_cast<char>(component->getPin()->getPinNum());
-		result += colorToStr(component->getColor().get());
+		result += colorToStr(component->getColor());
 	}
 	result += strToStr(strip->getName());
 	return result;
 }
 
-std::string colorSequenceToStr(ColorSequence * sequence) {
+std::string ledStripGroupToStr(LEDStripGroup* group) {
+	std::string result = strToStr(group->getID());
+	result += strToStr(group->getName());
+	if (group->getLEDStripIDs().size() > 10) {
+		result += result += static_cast<char>(0);
+		Serial.println("Too many LED Strips in the LED Strip Group! Sending empty...");
+	} else {
+		result += static_cast<char>(group->getLEDStripIDs().size());
+		for (auto id : group->getLEDStripIDs()) {
+			result += strToStr(id);
+		}
+	}
+	return result;
+}
+
+std::string colorSequenceToStr(std::shared_ptr<ColorSequence> sequence) {
 	// First, the color sequence ID
 	std::string result = strToStr(sequence->getID());
 
-	const std::vector<Color *>& colors = sequence->getColors();
+	const std::vector<std::shared_ptr<Color>>& colors = sequence->getColors();
 	// Number of items in the color sequence
 	result += static_cast<char>(colors.size());
 	// Next, the sequence type
@@ -294,7 +315,7 @@ std::string colorSequenceToStr(ColorSequence * sequence) {
 	result += shortToStr(sequence->getSustainTime());
 	result += shortToStr(sequence->getTransitionTime());
 	result += static_cast<char>(sequence->getTransitionTypeID());
-	for (Color * color : colors) {
+	for (std::shared_ptr<Color> color : colors) {
 		result += colorToStr(color);
 	}
 	result += strToStr(sequence->getName());

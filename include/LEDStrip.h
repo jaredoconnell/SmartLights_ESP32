@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 #include <memory>
-#include "ScheduledChange.h"
+#include "AbstractLEDStrip.h"
 
 #define MAX_BRIGHTNESS 4095
 
@@ -22,7 +22,7 @@ public:
 	 * Constructs a new LED strip component for the pin that
 	 * reproduces the given color.
 	 */
-	LEDStripComponent(std::shared_ptr<AddressablePin> pin, Color * color);
+	LEDStripComponent(std::shared_ptr<AddressablePin> pin, std::shared_ptr<Color> color);
 	
 	/**
 	 * Gets the pin that this LED strip component uses.
@@ -37,13 +37,12 @@ public:
 	/**
 	 * A value betwen 0.0 and 1.0
 	 */
-	void setBrightness(double brightness);
+	double setBrightness(double brightness);
 };
 
-class LEDStrip {
+class LEDStrip : public AbstractLEDStrip {
 private:
 	// Unchanging data
-	std::string id;
 	int numColors;
 	// Array of the colors
 	LEDStripComponent ** components;
@@ -52,18 +51,13 @@ private:
 	// Identical values will be overwritten, since it's a map.
 	std::vector<LEDStripComponent *> whiteComponents;
 	std::vector<LEDStripComponent *> singleColorComponents;
-	std::string name;
-
-    // Key: The ID of the scheduled change
-	// Value: The scheduled change itself
-	std::map<std::string, ScheduledChange*> scheduledChanges;
 
 	// Current state
 	std::shared_ptr<Color> currentColor;
 	std::shared_ptr<Color> persistentColor;
 	int currentBrightness = MAX_BRIGHTNESS;
 	bool isToggledOn = true;
-	ColorSequence * colorSequence = nullptr;
+	std::shared_ptr<ColorSequence> colorSequence;
 	int ticksLeftToPersist = -1;
 
 	// Methods
@@ -83,12 +77,7 @@ private:
 	 */
 	void turnOff();
 public:
-	LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name);
-
-	/**
-	 * @return The ID of the LED strip.
-	 */
-	std::string& getID();
+	LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name, Controller& controller);
 
 	/**
 	 * @return The number of components in the LED strip.
@@ -103,11 +92,6 @@ public:
 	LEDStripComponent * getComponent(int index);
 
 	/**
-	 * @return a reference to the name of the LED strip.
-	 */
-	std::string& getName();
-
-	/**
 	 * @return true if on, false if off.
 	 */
 	bool isOn();
@@ -120,22 +104,22 @@ public:
 	/**
 	 * Sets whether the LED strip is on or off.
 	 */
-	void setOnState(bool on);
+	virtual void setOnState(bool on);
 
 	/**
 	 * Sets the current brightness.
 	 */
-	void setCurrentBrightness(int brightness);
+	virtual void setCurrentBrightness(int brightness);
 
 	/**
 	 * Sets the current color sequence.
 	 */
-	void setColorSequence(ColorSequence * colorSequence);
+	virtual void setColorSequence(std::shared_ptr<ColorSequence> colorSequence);
 
 	/**
 	 * Gets the current color sequence, or null if it does not have one set.
 	 */
-	ColorSequence * getCurrentColorSequence();
+	std::shared_ptr<ColorSequence> getCurrentColorSequence();
 
 	/**
 	 * Persists the selected color for the specified amount of seconds
@@ -144,21 +128,19 @@ public:
 	 * Calling this again with a different color, or changing the
 	 * color sequence will overwrite this.
 	 */
-	void persistColor(Color * color, int seconds);
+	virtual void persistColor(std::shared_ptr<Color> color, int seconds);
 
 	/**
 	 * Sets the color the LED strip currently displays, with the current
 	 * brightness and on-state.
 	 */
-	void displayColor(Color * color);
+	void displayColor(std::shared_ptr<Color> color);
 
 	/**
 	 * Determines whether the color needs to be changed,
 	 * and changes it if it does.
 	 */
 	void update(int tick);
-
-	void updateSchedules(tm& time);
 
 	/**
 	 * A simple method that toggles all components on and off based
@@ -179,12 +161,6 @@ public:
 	 * -2 means persistent temporary color
 	 */
 	int getTicksLeftForTempColor();
-
-	const std::map<std::string, ScheduledChange*>& getScheduledChanges();
-
-	ScheduledChange* getScheduledChange(std::string id);
-
-	void addScheduledChange(ScheduledChange *);
 };
 
 #endif

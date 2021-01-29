@@ -28,7 +28,7 @@ void PinManager::initializePWMDriver(int addr) {
 	// that precise. You can 'calibrate' by tweaking this number till
 	// you get the frequency you're expecting!
 	driver->setOscillatorFrequency(27000000);	// The int.osc. is closer to 27MHz
-	driver->setPWMFreq(1600);	// This is the maximum PWM frequency
+	driver->setPWMFreq(1200);	// 1600 is the maximum PWM frequency
 
 	for(int i = 0; i < 16; i++)
 		driver->setPWM(i, 0, 0);

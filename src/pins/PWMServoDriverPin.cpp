@@ -6,8 +6,10 @@ PWMServoDriverPin::PWMServoDriverPin(Adafruit_PWMServoDriver * driver, int i2cAd
 	: driver(driver), i2cAddr(i2cAddr), pinNum(pin)
 {}
 
-void PWMServoDriverPin::setPWMValue(double decimalDutyCycle) {
-	driver->setPin(pinNum, round(4095 * decimalDutyCycle));
+double PWMServoDriverPin::setPWMValue(double decimalDutyCycle) {
+	int val = static_cast<int>(4095 * decimalDutyCycle);
+	driver->setPin(pinNum, val);
+	return val / 4095.0;
 }
 
 int PWMServoDriverPin::getI2CAddr() {

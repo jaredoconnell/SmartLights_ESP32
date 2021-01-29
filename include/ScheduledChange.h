@@ -1,6 +1,7 @@
 #ifndef SCHEDULED_CHANGE_H
 #define SCHEDULED_CHANGE_H
 
+#include <memory>
 #include <string>
 #include "Color.h"
 #include "time.h"
@@ -32,7 +33,7 @@ class ScheduledChange {
         // Changes
         int changesBitwise = 0;
         int newBrightness;
-        Color * newColor = nullptr;
+        std::shared_ptr<Color> newColor;
         std::string newColorSequenceID = "";
 
         // Day last applied, to prevent it from applying more than once per day

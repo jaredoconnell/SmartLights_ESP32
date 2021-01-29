@@ -2,6 +2,7 @@
 #include "LEDStrip.h"
 #include "ColorSequence.h"
 #include "Controller.h"
+#include "packets/sendable_packets/SendablePackets.h"
 
 // Send debug messages
 #include <HardwareSerial.h>
@@ -33,7 +34,7 @@ void ScheduledChange::check(tm& time) {
 }
 
 void ScheduledChange::apply() {
-    LEDStrip * ledStrip = controller.getLEDStrip(ledStripID);
+    AbstractLEDStrip * ledStrip = controller.getLEDStrip(ledStripID);
     Serial.println("Applying scheduled change");
     int shouldTurnOff = !this->shouldTurnOn;
     if (brightnessChanges()) {
@@ -48,7 +49,7 @@ void ScheduledChange::apply() {
     }
     if (colorSequenceChanges()) {
         Serial.printf("Setting color sequence to %s\n", newColorSequenceID.c_str());
-        ColorSequence * sequence = controller.getColorSequence(newColorSequenceID);
+        std::shared_ptr<ColorSequence> sequence = controller.getColorSequence(newColorSequenceID);
         ledStrip->setColorSequence(sequence);
         shouldTurnOff = false;
     }
@@ -58,6 +59,13 @@ void ScheduledChange::apply() {
     } else if (shouldTurnOff) {
         Serial.println("Turning off.");
         ledStrip->setOnState(false);
+    }
+
+    LEDStrip* asLEDStrip = dynamic_cast<LEDStrip*>(ledStrip);
+    if (asLEDStrip != nullptr) { // is strip, not strip group
+        std::shared_ptr<std::map<std::string, LEDStrip *>> changedLEDStrips = std::make_shared<std::map<std::string, LEDStrip *>>();
+        (*changedLEDStrips.get())[ledStripID] = asLEDStrip;
+        controller.queuePacket(new SendLEDStripDataPacket(controller, changedLEDStrips, 0, 1));
     }
 }
 

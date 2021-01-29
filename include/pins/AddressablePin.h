@@ -8,8 +8,10 @@ public:
 	 * 
 	 * The decimal value will be converted to the integer for
 	 * the pin's resolution.
+	 * 
+	 * @return The decimal value for the actually displayed duty cycle
 	 */
-	virtual void setPWMValue(double decimalDutyCycle) = 0;
+	virtual double setPWMValue(double decimalDutyCycle) = 0;
 
 	/**
 	 * Returns the pin, or 0 if it does not over I2C.

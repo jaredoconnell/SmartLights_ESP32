@@ -1,5 +1,6 @@
 #include "Controller.h"
 #include "LEDStrip.h"
+#include "LEDStripGroup.h"
 #include "ColorSequence.h"
 #include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
@@ -8,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <chrono>
+#include <memory>
 
 #include <Adafruit_PWMServoDriver.h>
 
@@ -26,6 +28,8 @@
 #define CHARACTERISTIC_UUID_TX "1CF8D309-11A3-46FB-9378-9AFFF7DCE3B4"
 
 Controller::Controller() {
+	ledStrips = std::make_shared<std::map<std::string, LEDStrip *>>();
+	ledStripGroups = std::make_shared<std::map<std::string, LEDStripGroup *>>();
 	packets[1] = new GetPWMPacket(*this);
 	packets[2] = new GetLEDStripsPacket(*this);
 	packets[3] = new AddPWMDriverPacket(*this);
@@ -40,12 +44,13 @@ Controller::Controller() {
 	packets[18] = new SetSettingPacket(*this);
 	packets[19] = new SetColorPacket(*this);
 	packets[20] = new SetTimePacket(*this);
+	packets[22] = new GetLedStripGroupsPacket(*this);
 }
 
 
 void Controller::init() {
 	// Create the BLE Device
-	BLEDevice::init("LEDs"); // Give it a name
+	BLEDevice::init("LED Strip Controller"); // Give it a name
 
 	// Create the BLE Server
 	BLEServer *pServer = BLEDevice::createServer();
@@ -139,13 +144,23 @@ void Controller::sendPacketFromQueue() {
 }
 
 void Controller::addLEDStrip(LEDStrip * strip) {
-	ledStrips[strip->getID()] = strip;
-}
-void Controller::addColorSequence(ColorSequence * seq) {
-	colorSequences[seq->getID()] = seq;
+	(*ledStrips)[strip->getID()] = strip;
 }
 
-ColorSequence * Controller::getColorSequence(std::string& id) {
+void Controller::addLEDStripGroup(LEDStripGroup * group) {
+	(*ledStripGroups)[group->getID()] = group;
+}
+
+void Controller::addColorSequence(ColorSequence * seq) {
+	auto findResult = colorSequences.find(seq->getID());
+	if (findResult == colorSequences.end()) {
+		colorSequences[seq->getID()] = std::shared_ptr<ColorSequence>(seq);
+	} else {
+		*(findResult->second.get()) = *seq; // Replaces with pointer to new one
+	}
+}
+
+std::shared_ptr<ColorSequence> Controller::getColorSequence(std::string& id) {
 	auto itr = colorSequences.find(id);
 	if (itr == colorSequences.end()) {
 		return nullptr;
@@ -154,21 +169,30 @@ ColorSequence * Controller::getColorSequence(std::string& id) {
 	}
 }
 
-LEDStrip * Controller::getLEDStrip(std::string& id) {
-	auto itr = ledStrips.find(id);
-	if (itr == ledStrips.end()) {
-		return nullptr;
+AbstractLEDStrip * Controller::getLEDStrip(std::string& id) {
+	auto itr = ledStrips->find(id);
+	if (itr == ledStrips->end()) {
+		auto itr2 = ledStripGroups->find(id);
+		if (itr2 == ledStripGroups->end()) {
+			return nullptr;
+		} else {
+			return itr2->second;
+		}
 	} else {
 		return itr->second;
 	}
 }
 
-const std::map<std::string, ColorSequence *>& Controller::getColorSequences() {
+const std::map<std::string, std::shared_ptr<ColorSequence>>& Controller::getColorSequences() {
 	return colorSequences;
 }
 
-const std::map<std::string, LEDStrip *>& Controller::getLedStrips() {
+std::shared_ptr<std::map<std::string, LEDStrip *>> Controller::getLedStrips() {
 	return ledStrips;
+}
+
+std::shared_ptr<std::map<std::string, LEDStripGroup *>> Controller::getLedStripGroups() {
+	return ledStripGroups;
 }
 
 PinManager& Controller::getPinManager() {
@@ -196,7 +220,9 @@ void Controller::onTick(int time) {
 			Serial.println(utc_tm.tm_sec);
 		}
 		lastSecond = utc_tm.tm_sec;
-		for (auto ledstrip : ledStrips) {
+		for (auto ledstrip : *ledStrips) {
+			ledstrip.second->updateSchedules(utc_tm);
+		} for (auto ledstrip : *ledStripGroups) {
 			ledstrip.second->updateSchedules(utc_tm);
 		}
 	}
@@ -204,7 +230,7 @@ void Controller::onTick(int time) {
 	for (auto sequence : colorSequences) {
 		sequence.second->updateCurrentColor(time);
 	}
-	for (auto ledstrip : ledStrips) {
+	for (auto ledstrip : *ledStrips) {
 		ledstrip.second->update(time);
 	}
 	sendPacketFromQueue();
@@ -228,9 +254,16 @@ void Controller::queuePacket(SendablePacket * packetToSend) {
 void Controller::sendLEDStrips() {
 	// Number of packets needed is the rounded up divided by 6.
 	int numLEDStripsPerPacket = 3;
-	int numPackets = (ledStrips.size() + numLEDStripsPerPacket - 1) / numLEDStripsPerPacket;
+	int numPackets = (ledStrips->size() + numLEDStripsPerPacket - 1) / numLEDStripsPerPacket;
 	for (int i = 0; i < numPackets; i++) {
-		queuePacket(new SendLEDStripDataPacket(*this, i * numLEDStripsPerPacket, numLEDStripsPerPacket));
+		queuePacket(new SendLEDStripDataPacket(*this, getLedStrips(), i * numLEDStripsPerPacket, numLEDStripsPerPacket));
+	}
+}
+
+void Controller::sendLEDStripGroups() {
+	// Number of packets needed is the rounded up divided by 6.
+	for (int i = 0; i < ledStripGroups->size(); i++) {
+		queuePacket(new SendLEDStripGroupsPacket(*this, ledStripGroups, i));
 	}
 }
 
@@ -245,8 +278,13 @@ void Controller::sendColorSequences() {
 
 std::vector<ScheduledChange*> Controller::getAllScheduledChanges() {
 	std::vector<ScheduledChange*> all;
-	for (auto strip : ledStrips) {
+	for (auto strip : *ledStrips) {
 		for (auto sequence : strip.second->getScheduledChanges()) {
+			all.push_back(sequence.second);
+		}
+	}
+	for (auto stripGroup : *ledStripGroups) {
+		for (auto sequence : stripGroup.second->getScheduledChanges()) {
 			all.push_back(sequence.second);
 		}
 	}

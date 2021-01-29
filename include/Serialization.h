@@ -1,7 +1,9 @@
 #include <istream>
 #include <string>
+#include <memory>
 
 class LEDStrip;
+class LEDStripGroup;
 class ColorSequence;
 class Color;
 class Controller;
@@ -45,7 +47,7 @@ std::string getString(std::istream& stream);
  * 
  * @return the new color object.
  */
-Color * getColor(std::istream& stream);
+std::shared_ptr<Color> getColor(std::istream& stream);
 
 /**
  * @param stream: An istream that has the data for a color sequence.
@@ -86,7 +88,7 @@ std::string shortToStr(int val);
 /**
  * @return the binary representation of the given color.
  */
-std::string colorToStr(Color * color);
+std::string colorToStr(std::shared_ptr<Color> color);
 
 /**
  * @return the binary representation of the given LED strip.
@@ -94,9 +96,14 @@ std::string colorToStr(Color * color);
 std::string ledStripToStr(LEDStrip * strip);
 
 /**
+ * @return the binary representation of the given LED strip group.
+ */
+std::string ledStripGroupToStr(LEDStripGroup* group);
+
+/**
  * @return the binary representation of the given Color Sequence.
  */
-std::string colorSequenceToStr(ColorSequence *);
+std::string colorSequenceToStr(std::shared_ptr<ColorSequence>);
 
 /**
  * @return the binary representation of the given Scheduled Change.

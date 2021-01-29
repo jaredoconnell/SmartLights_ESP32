@@ -16,11 +16,11 @@ private:
 	int transitionTypeID;
 	int totalTimePerColor;
 	int totalCycleTime;
-	std::vector<Color*> colors;
+	std::vector<std::shared_ptr<Color>> colors;
 
 	std::shared_ptr<Color> currentColor;
 public:
-	ColorSequence(std::string id, std::vector<Color*> colors, int sustainTime, int transitionTime, int transitionTypeID, std::string name);
+	ColorSequence(std::string id, std::vector<std::shared_ptr<Color>> colors, int sustainTime, int transitionTime, int transitionTypeID, std::string name);
 	std::string& getID();
 	std::string& getName();
 
@@ -30,6 +30,8 @@ public:
 	int getSustainTime();
 	int getTransitionTime();
 	int getTransitionTypeID();
-	const std::vector<Color*>& getColors();
+	const std::vector<std::shared_ptr<Color>>& getColors();
+
+	ColorSequence& operator=(const ColorSequence& other);
 };
 #endif
