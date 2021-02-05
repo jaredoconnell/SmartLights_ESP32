@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "time.h"
+#include "custom/custom.h"
 
 /*
 		Video: https://www.youtube.com/watch?v=oCMOYS71NIU
@@ -61,6 +62,7 @@ void setup() {
 	Wire.setClock(400000);
 
 	controller.init();
+	onPostInit(controller);
 }
 
 void loop() {
