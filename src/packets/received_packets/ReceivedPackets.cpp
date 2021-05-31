@@ -128,8 +128,15 @@ void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 	}
 
 	if (ledStrip != nullptr) {
-		ledStrip->setCurrentBrightness(brightness);				
+		// On state should be set int he correct order to
+		// prevent it from temporarily turning on with the
+		// incorrect brightness, or brightening before
+		// turning off.
+		if (isOn)
+			ledStrip->setCurrentBrightness(brightness);				
 		ledStrip->setOnState(isOn);
+		if (!isOn)
+			ledStrip->setCurrentBrightness(brightness);				
 	} else {
 		Serial.print("Could not find LED strip ");
 		Serial.println(LEDStripID.c_str());
