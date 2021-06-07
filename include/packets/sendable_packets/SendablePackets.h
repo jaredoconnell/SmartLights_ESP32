@@ -70,4 +70,16 @@ class SendLEDStripGroupsPacket : public SendablePacket {
 		virtual std::string getData();
 };
 
+
+class PacketReceivedNotificationPacket : public SendablePacket {
+	private:
+		int packetIndex;
+		bool success;
+		bool recognised;
+	public:
+		PacketReceivedNotificationPacket(Controller & controller,
+			int packetIndex, bool success, bool recognised);
+		virtual std::string getData();
+};
+
 #endif

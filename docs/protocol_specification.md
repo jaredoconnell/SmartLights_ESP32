@@ -105,7 +105,20 @@ The current max size per packet is 152. That means you can reasonably hold up to
 ---
 
 ## Packet Format
-The packet ID, followed by the data.
+
+#### Phone to ESP32 Format
+1. The packet ID
+2. The packet index
+3. The packet's data.
+
+The packet's index will be 4 bytes, and shouldn't need to loop because of that.
+When it does loop, it will be because of the app losing track of the index.
+
+The indexes will be consecutive, so if it gets an index that skips an index, it should report it as a missed packet.
+
+#### ESP32 to Phone Format
+1. The packet ID
+2. The packet's data.
 
 ---
 ## Packets
@@ -348,3 +361,11 @@ Data:
 | 5 | Many bytes | The group data (as defined in the data types section). |
 
 One will be sent at a time, since a group can take up an entire packet.
+
+Packet name: **Packet Recieved Info** \
+Packet ID: 244 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | Four bytes | The packet ID |
+| 4 | One Byte | 0 if packet recieved, 1 if missed, 2 if not recognised |

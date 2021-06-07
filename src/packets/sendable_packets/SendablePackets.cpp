@@ -171,3 +171,19 @@ std::string SendLEDStripGroupsPacket::getData() {
 
 	return output;
 }
+// ------------------------------------------------------------------------------ //
+PacketReceivedNotificationPacket::PacketReceivedNotificationPacket(Controller & controller,
+			int packetIndex, bool success, bool recognised)
+	: SendablePacket(controller), packetIndex(packetIndex), success(success)
+{}
+
+std::string PacketReceivedNotificationPacket::getData() {
+	std::string output = "";
+	// Packet ID
+	output += static_cast<char>(244);
+
+	output += intToStr(packetIndex);
+	output += success ? (recognised ? 0 : 2 ) : 1;
+
+	return output;
+}

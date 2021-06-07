@@ -86,6 +86,11 @@ std::string strToStr(std::string str);
 std::string shortToStr(int val);
 
 /**
+ * @return the binary representation of the given int.
+ */
+std::string intToStr(int val);
+
+/**
  * @return the binary representation of the given color.
  */
 std::string colorToStr(std::shared_ptr<Color> color);

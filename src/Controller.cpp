@@ -5,6 +5,7 @@
 #include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "packets/received_packets/ReceivedPackets.h"
+#include "Serialization.h"
 
 #include <string>
 #include <sstream>
@@ -99,13 +100,17 @@ void Controller::onWrite(BLECharacteristic *pCharacteristic) {
 		std::stringstream strStream(rxValue);
 
 		int packetID = strStream.get();
+		int packetIndex = get32BitInt(strStream);
 
 		auto packetItr = packets.find(packetID);
 		if (packetItr == packets.end()) {
 			Serial.println("Unknown packet! ");
 			Serial.println(packetID);
+
+			queuePacket(new PacketReceivedNotificationPacket(*this, packetIndex, true, false));
 			// TODO: Send error packet back to phone.
 		} else {
+			queuePacket(new PacketReceivedNotificationPacket(*this, packetIndex, true, true));
 			packetItr->second->parse(strStream);
 		}
 		
