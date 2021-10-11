@@ -1,0 +1,51 @@
+Basic remote with keypad and arrows:
+1:
+Protocol=NEC Address=0x0 Command=0x45 Raw-Data=0xBA45FF00 32 bits LSB first
+
+2:
+Protocol=NEC Address=0x0 Command=0x46 Raw-Data=0xB946FF00 32 bits LSB first
+
+3:
+Protocol=NEC Address=0x0 Command=0x47 Raw-Data=0xB847FF00 32 bits LSB first
+
+4:
+Protocol=NEC Address=0x0 Command=0x44 Raw-Data=0xBB44FF00 32 bits LSB first
+
+5:
+Protocol=NEC Address=0x0 Command=0x40 Raw-Data=0xBF40FF00 32 bits LSB first
+
+6:
+Protocol=NEC Address=0x0 Command=0x43 Raw-Data=0xBC43FF00 32 bits LSB first
+
+7:
+Protocol=NEC Address=0x0 Command=0x7 Raw-Data=0xF807FF00 32 bits LSB first
+
+8:
+Protocol=NEC Address=0x0 Command=0x15 Raw-Data=0xEA15FF00 32 bits LSB first
+
+9:
+Protocol=NEC Address=0x0 Command=0x9 Raw-Data=0xF609FF00 32 bits LSB first
+
+0:
+Protocol=NEC Address=0x0 Command=0x19 Raw-Data=0xE619FF00 32 bits LSB first
+
+*:
+Protocol=NEC Address=0x0 Command=0x16 Raw-Data=0xE916FF00 32 bits LSB first
+
+#:
+Protocol=NEC Address=0x0 Command=0xD Raw-Data=0xF20DFF00 32 bits LSB first
+
+OK:
+Protocol=NEC Address=0x0 Command=0x1C Raw-Data=0xE31CFF00 32 bits LSB first
+
+Up:
+Protocol=NEC Address=0x0 Command=0x18 Raw-Data=0xE718FF00 32 bits LSB first
+
+Down:
+Protocol=NEC Address=0x0 Command=0x52 Raw-Data=0xAD52FF00 32 bits LSB first
+
+Left:
+Protocol=NEC Address=0x0 Command=0x8 Raw-Data=0xF708FF00 32 bits LSB first
+
+Right:
+Protocol=NEC Address=0x0 Command=0x5A Raw-Data=0xA55AFF00 32 bits LSB first

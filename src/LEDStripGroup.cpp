@@ -32,6 +32,37 @@ void LEDStripGroup::setColorSequence(std::shared_ptr<ColorSequence> colorSequenc
 	}
 }
 
+int LEDStripGroup::getMinCurrentBrightness() {
+	int minBrightness = 4095;
+	for (std::string stripID : stripIDs) {
+		int brightness = controller.getLEDStrip(stripID)->getMinCurrentBrightness();
+		if (brightness < minBrightness) {
+			minBrightness = brightness;
+		}
+	}
+	return minBrightness;
+}
+
+int LEDStripGroup::getMaxCurrentBrightness() {
+	int maxBrightness = 0;
+	for (std::string stripID : stripIDs) {
+		int brightness = controller.getLEDStrip(stripID)->getMinCurrentBrightness();
+		if (brightness > maxBrightness) {
+			maxBrightness = brightness;
+		}
+	}
+	return maxBrightness;
+}
+
+bool LEDStripGroup::isOn() {
+	for (std::string stripID : stripIDs) {
+		if (controller.getLEDStrip(stripID)->isOn()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void LEDStripGroup::setOnState(bool on) {
 	for (std::string stripID : stripIDs) {
 		AbstractLEDStrip * strip = controller.getLEDStrip(stripID);

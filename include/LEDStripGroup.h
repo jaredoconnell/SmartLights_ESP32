@@ -20,6 +20,13 @@ private:
 public:
 	LEDStripGroup(Controller& controller, std::string id, std::string name, std::vector<std::string> stripIDs);
 
+	virtual bool isOn();
+
+	
+	virtual int getMinCurrentBrightness();
+
+	virtual int getMaxCurrentBrightness();
+
 	/**
 	 * Sets whether the LED strip is on or off.
 	 */

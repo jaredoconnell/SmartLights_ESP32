@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "time.h"
 #include "custom/custom.h"
+#include "IRController.h"
 
 #include <cstdlib>
 
@@ -14,13 +15,16 @@
 // Controller
 Controller controller;
 
+// IR
+IRController irController(controller);
+
 // TIMER
 volatile int interruptCounter;
 int totalInterruptCounter;
 
-hw_timer_t * timer = NULL;
+hw_timer_t * mainTickTimer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
- 
+
 void IRAM_ATTR onTimer() {
 	portENTER_CRITICAL_ISR(&timerMux);
 	interruptCounter++;
@@ -30,21 +34,28 @@ void IRAM_ATTR onTimer() {
 void setup() {
 	Serial.begin(115200);
 
-	timer = timerBegin(0, 80, true);
-	timerAttachInterrupt(timer, &onTimer, true);
-	timerAlarmWrite(timer, 16666 /*100000*/, true);
-	timerAlarmEnable(timer);
-	
+	mainTickTimer = timerBegin(0, 80, true);
+	timerAttachInterrupt(mainTickTimer, &onTimer, true);
+	timerAlarmWrite(mainTickTimer, 16666 /*100000*/, true);
+	timerAlarmEnable(mainTickTimer);
+
 	// if you want to really speed stuff up, you can go into 'fast 400khz I2C' mode
 	// some i2c devices dont like this so much so if you're sharing the bus, watch
 	// out for this!
 	Wire.setClock(400000);
+
+	// IR
+	irController.setup();
 
 	controller.init();
 	onPostInit(controller);
 }
 
 void loop() {
+	// IR
+	irController.tick();
+
+	// Ticks
 	if (interruptCounter > 0) {
 		portENTER_CRITICAL(&timerMux);
 		interruptCounter--;

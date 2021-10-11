@@ -100,6 +100,19 @@ public:
 	 */
 	bool isOn();
 
+	
+	virtual int getMinCurrentBrightness() {
+		return getCurrentBrightness();
+	}
+
+	/**
+	 * Gets the current brightness.
+	 * If there are several LED strips, it gets the greatest brightness.
+	 */
+	virtual int getMaxCurrentBrightness() {
+		return getCurrentBrightness();
+	}
+
 	/**
 	 * @return the current brightness of the LED strip.
 	 */

@@ -41,6 +41,23 @@ public:
 
 	void addScheduledChange(ScheduledChange *);
 
+	/**
+	 * Returns true if the LED strip (or any component LED strips) are on.
+	 */
+	virtual bool isOn() = 0;
+
+	/**
+	 * Gets the current brightness.
+	 * If there are several LED strips, it gets the dimmest brightness.
+	 */
+	virtual int getMinCurrentBrightness() = 0;
+
+	/**
+	 * Gets the current brightness.
+	 * If there are several LED strips, it gets the greatest brightness.
+	 */
+	virtual int getMaxCurrentBrightness() = 0;
+
 	// Virtual functions
 	/**
 	 * Sets whether the LED strip is on or off.

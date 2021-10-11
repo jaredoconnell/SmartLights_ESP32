@@ -188,11 +188,11 @@ void SetColorPacket::parse(std::istream &data) {
 	Serial.printf("Free memory %d\n", xPortGetFreeHeapSize());
 	std::string LEDStripID = getString(data);
 	std::shared_ptr<Color> color = getColor(data);
-	int seconds = getShort(data);
+	int ms = get32BitInt(data);
 
 	AbstractLEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
 	if (ledStrip != nullptr) {
-		ledStrip->persistColor(color, seconds);
+		ledStrip->persistColor(color, ms);
 	} else {
 		
 		Serial.print("Could not find LED strip ");

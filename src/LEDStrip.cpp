@@ -213,14 +213,14 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 	blue -= componentColor->getBlue() * brightness;
 }
 
-void LEDStrip::persistColor(std::shared_ptr<Color> color, int seconds) {
+void LEDStrip::persistColor(std::shared_ptr<Color> color, int ms) {
 	this->currentColor = color;
-	if (seconds == 0) {
+	if (ms == 0) {
 		persistentColor = std::make_shared<Color>(*color);
 		this->colorSequence = nullptr;
 		ticksLeftToPersist = -2;
 	} else {
-		ticksLeftToPersist = seconds * 60;
+		ticksLeftToPersist = 1 + (ms * 100 / 1667);
 	}
 	displayColor(color);
 }
