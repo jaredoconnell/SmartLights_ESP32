@@ -240,10 +240,10 @@ Data:
 | --- | --- | --- |
 | 0 | 37 Bytes | The LED Strip or Group ID |
 | 2 | Three bytes | The Color |
-| 5 | Two bytes | The number of seconds |
+| 5 | Four bytes | The number of ms |
 
 Sets the color for the LED strip.
-The color will last the specified number of seconds, indefinitely if 0, except will change if the color sequence is set for the LED strip.
+The color will last the specified number of milliseconds seconds, indefinitely if 0, except will change if the color sequence is set for the LED strip.
 
 Packet name: **Update Time** \
 Packet ID: 20 \
@@ -263,6 +263,23 @@ Packet name: **Get LED Strip Groups** \
 Packet ID: 22 \
 Data: None
 
+Packet name: **Set LED Strip Calibration Mode** \
+Packet ID: 23 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | 37 Bytes	| The LED Strip ID |
+| 37 | One byte | 0 if disabled, 1 if enabled |
+| 38 | One byte | The index of the selected component, or 255 |
+
+Packet name: **Set LED Strip Calibration Value** \
+Packet ID: 24 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | 37 Bytes	| The LED Strip ID |
+| 37 | One byte | The index of the selected component |
+| 38 | Two bytes | The calibrated value for the component |
 
 ---
 ### From ESP32 to phone:

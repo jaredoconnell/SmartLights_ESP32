@@ -131,4 +131,20 @@ class GetLedStripGroupsPacket : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+class SetLEDStripCalibrationMode : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		SetLEDStripCalibrationMode(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
+class SetLEDStripCalibrationValue : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		SetLEDStripCalibrationValue(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

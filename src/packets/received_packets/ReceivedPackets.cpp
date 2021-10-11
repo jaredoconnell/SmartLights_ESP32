@@ -4,6 +4,7 @@
 #include "ColorSequence.h"
 #include "Controller.h"
 #include "AbstractLEDStrip.h"
+#include "LEDStrip.h"
 #include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "Serialization.h"
@@ -44,7 +45,7 @@ AddPWMDriverPacket::AddPWMDriverPacket(Controller & controller)
 {}
 void AddPWMDriverPacket::parse(std::istream &data) {
 	Serial.println("Got packet add pwm driver");
-	controller.getPinManager().initializePWMDriver(data.get());
+	controller.getPinManager().initializePWMDriver(data.get(), 0);
 	Serial.println("Done");
 }
 
@@ -119,8 +120,13 @@ SetLEDStripBrightnessPacket::SetLEDStripBrightnessPacket(Controller & controller
 void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 	Serial.println("Got packet set led strip brightness");
 	std::string LEDStripID = getString(data);
-	bool isOn = data.get();
+	int isOn = data.get();
 	int brightness = getShort(data);
+	Serial.print("Setting brightness to ");
+	Serial.print(brightness);
+	Serial.print(" and onstate to ");
+	Serial.println(isOn);
+
 
 	AbstractLEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
 	if (ledStrip == nullptr) {
@@ -128,14 +134,15 @@ void SetLEDStripBrightnessPacket::parse(std::istream &data) {
 	}
 
 	if (ledStrip != nullptr) {
-		// On state should be set int he correct order to
+		// On state should be set in the correct order to
 		// prevent it from temporarily turning on with the
 		// incorrect brightness, or brightening before
 		// turning off.
-		if (isOn)
+		if (isOn != 0)
 			ledStrip->setCurrentBrightness(brightness);				
-		ledStrip->setOnState(isOn);
-		if (!isOn)
+		if (isOn != 2)
+			ledStrip->setOnState(isOn);
+		if (isOn == 0)
 			ledStrip->setCurrentBrightness(brightness);				
 	} else {
 		Serial.print("Could not find LED strip ");
@@ -244,6 +251,57 @@ GetLedStripGroupsPacket::GetLedStripGroupsPacket(Controller & controller)
 void GetLedStripGroupsPacket::parse(std::istream &data) {
 	Serial.println("Got packet get led strip groups");
 	controller.sendLEDStripGroups();
+	Serial.println("Done.");
+}
+
+
+// ---------------------------------------------------- //
+
+SetLEDStripCalibrationMode::SetLEDStripCalibrationMode(Controller & controller)
+	: controller(controller)
+{}
+void SetLEDStripCalibrationMode::parse(std::istream &data) {
+	Serial.println("Got packet SetLEDStripCalibrationMode");
+	std::string LEDStripID = getString(data);
+	bool isEnabled = data.get();
+	int ledStripIndex = data.get();
+	if (ledStripIndex == 255)
+		ledStripIndex = -1;
+
+	Serial.print("Is enabled: ");
+	Serial.println(isEnabled);
+	Serial.print("Index: ");
+	Serial.println(ledStripIndex);
+
+	LEDStrip * ledStrip = reinterpret_cast<LEDStrip*>(controller.getLEDStrip(LEDStripID));
+	if (ledStrip != nullptr) {
+		ledStrip->setCalibrationMode(isEnabled, ledStripIndex);
+	} else {
+		Serial.print("Could not find LED strip ");
+		Serial.println(LEDStripID.c_str());
+	}
+	Serial.println("Done.");
+}
+
+
+// ---------------------------------------------------- //
+
+SetLEDStripCalibrationValue::SetLEDStripCalibrationValue(Controller & controller)
+	: controller(controller)
+{}
+void SetLEDStripCalibrationValue::parse(std::istream &data) {
+	Serial.println("Got packet SetLEDStripCalibrationValue");
+	std::string LEDStripID = getString(data);
+	int ledStripChannelIndex = data.get();
+	int calibrationValue = getShort(data);
+
+	LEDStrip * ledStrip = reinterpret_cast<LEDStrip*>(controller.getLEDStrip(LEDStripID));
+	if (ledStrip != nullptr) {
+		ledStrip->setCalibrationLevels(ledStripChannelIndex, calibrationValue);
+	} else {
+		Serial.print("Could not find LED strip ");
+		Serial.println(LEDStripID.c_str());
+	}
 	Serial.println("Done.");
 }
 

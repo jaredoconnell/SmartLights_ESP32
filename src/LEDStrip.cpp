@@ -10,15 +10,23 @@
 
 static std::mutex mutex;
 
-LEDStrip::LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name, Controller& controller)
-	: AbstractLEDStrip(id, name, controller), numColors(numColors), components(components)
+LEDStrip::LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name,
+	Controller& controller, int * calibrationBrightnesses)
+	: AbstractLEDStrip(id, name, controller), numColors(numColors), components(components),
+		calibrationBrightnesses(calibrationBrightnesses)
 {
+	if (calibrationBrightnesses == nullptr) {
+		this->calibrationBrightnesses = new int[numColors];
+		for (int i = 0; i < numColors; i++) {
+			this->calibrationBrightnesses[i] = 4095;
+		}
+	}
 	for (int i = 0; i < numColors; i++) {
 		std::shared_ptr<Color> color = components[i]->getColor();
 		if (color->hasWhite()) {
-			whiteComponents.push_back(components[i]);
+			whiteComponents.push_back(i);
 		} else {
-			singleColorComponents.push_back(components[i]);
+			singleColorComponents.push_back(i);
 		}
 	}
 }
@@ -63,8 +71,8 @@ void LEDStrip::displayColor(std::shared_ptr<Color> color) {
 
 	// TODO: Account for bi-color components and account for it here.
 
-	for (LEDStripComponent * strip : singleColorComponents) {
-		updateLEDStripComponent(red, green, blue, 1, strip);
+	for (int stripIndex : singleColorComponents) {
+		updateLEDStripComponent(red, green, blue, 1, stripIndex);
 	}
 }
 
@@ -76,8 +84,8 @@ void LEDStrip::displayWhiteComponents(double &red, double &green, double &blue) 
 	// Return the color if the color does not have three components.
 	// Or if there are no white components
 	if (red == 0 || green == 0 || blue == 0 || whiteComponents.size() == 0) {
-		for (auto comp : whiteComponents) {
-			comp->setBrightness(0);
+		for (auto compIndex : whiteComponents) {
+			components[compIndex]->setBrightness(0);
 		}
 		return;
 	}
@@ -90,11 +98,12 @@ void LEDStrip::displayWhiteComponents(double &red, double &green, double &blue) 
 	// Note: Negative means more blue, positive means more red.
 	double closestPositive = 99999999;
 	double closestNegative = -99999999;
-	LEDStripComponent * closestNegativeComponent = nullptr;
-	LEDStripComponent * closestPositiveComponent = nullptr;
+	int closestNegativeComponent = -1;
+	int closestPositiveComponent = -1;
 
 
-	for (LEDStripComponent * whiteComp : whiteComponents) {
+	for (int whiteCompIndex : whiteComponents) {
+		LEDStripComponent * whiteComp = components[whiteCompIndex];
 		std::shared_ptr<Color> color = whiteComp->getColor();
 		double compDiff = (color->getRed() - color->getBlue()) / static_cast<double>(color->getRed() + color->getBlue());
 		double thisDiff = compDiff - colorDiff;
@@ -102,27 +111,27 @@ void LEDStrip::displayWhiteComponents(double &red, double &green, double &blue) 
 		if (thisDiff == 0) {
 			// Exact match, so use it and be done
 			closestNegative = 0;
-			closestNegativeComponent = nullptr;
+			closestNegativeComponent = -1;
 			closestPositive = 0;
-			closestPositiveComponent = whiteComp;
+			closestPositiveComponent = whiteCompIndex;
 		} else if (thisDiff < 0) {
 			if (thisDiff > closestNegative) {
 				closestNegative = thisDiff;
-				closestNegativeComponent = whiteComp;
+				closestNegativeComponent = whiteCompIndex;
 			}
 		} else {
 			if (thisDiff < closestPositive) {
 				closestPositive = thisDiff;
-				closestPositiveComponent = whiteComp;
+				closestPositiveComponent = whiteCompIndex;
 			}
 		}
 	}
 
-	if (closestNegativeComponent == nullptr && closestPositiveComponent == nullptr) {
+	if (closestNegativeComponent == -1 && closestPositiveComponent == -1) {
 		Serial.println("Both null. This should not happen. Doing nothing.");
-	} else if (closestNegativeComponent == nullptr) {
+	} else if (closestNegativeComponent == -1) {
 		updateLEDStripComponent(red, green, blue, 1, closestPositiveComponent);
-	} else if (closestPositiveComponent == nullptr) {
+	} else if (closestPositiveComponent == -1) {
 		updateLEDStripComponent(red, green, blue, 1, closestNegativeComponent);
 	} else {
 		// Solve equation to get proper ratio
@@ -141,16 +150,16 @@ void LEDStrip::displayWhiteComponents(double &red, double &green, double &blue) 
 		updateLEDStripComponent(red, green, blue, 1, closestPositiveComponent);
 	}
 	// Turn off unused components
-	for (auto whiteComp : whiteComponents) {
-		if (whiteComp != closestPositiveComponent && whiteComp != closestNegativeComponent) {
-			whiteComp->setBrightness(0);
+	for (auto whiteCompIndex : whiteComponents) {
+		if (whiteCompIndex != closestPositiveComponent && whiteCompIndex != closestNegativeComponent) {
+			components[whiteCompIndex]->setBrightness(0);
 		}
 
 	}
 	// No other white components are needed.
 }
 
-void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue, double factor, LEDStripComponent * component) {
+void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue, double factor, int componentIndex) {
 	// Find the highest brightness it can be without going over.
 	// Zero values are set to the max brightness because it can be at the max brightness
 	// without producing the wrong color.
@@ -161,6 +170,8 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 	// (strip set brightness) = 255 * (wanted brightness) / (strip color brightness)
 
 	// Test case: Red LED strip, but you need to display blue.
+	
+	LEDStripComponent * component = components[componentIndex];
 
 	std::shared_ptr<Color> componentColor = component->getColor();
 
@@ -191,15 +202,15 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 		brightness = 1.0;
 	brightness *= factor;
 
-	double actualBrightness = component->setBrightness(brightness);
+	component->setBrightness(brightness * (calibrationBrightnesses[componentIndex] / 4095.0));
 
 	// Now subtract this strip's affect on the color components.
 	// This is to allow several LED strip colors to contribute
 	// to the overall color reproduction.
 	// (strip color brightness) * (strip set brightness) = (actual brightness)
-	red -= componentColor->getRed() * actualBrightness;
-	green -= componentColor->getGreen() * actualBrightness;
-	blue -= componentColor->getBlue() * actualBrightness;
+	red -= componentColor->getRed() * brightness;
+	green -= componentColor->getGreen() * brightness;
+	blue -= componentColor->getBlue() * brightness;
 }
 
 void LEDStrip::persistColor(std::shared_ptr<Color> color, int seconds) {
@@ -250,7 +261,7 @@ void LEDStrip::setOnState(bool on) {
 }
 
 void LEDStrip::setCurrentBrightness(int brightness) {
-	Serial.printf("Brightness set to %d", brightness);
+	Serial.printf("Brightness set to %d\n", brightness);
 	bool changed = brightness != this->currentBrightness;
 	this->currentBrightness = brightness;
 
@@ -259,7 +270,19 @@ void LEDStrip::setCurrentBrightness(int brightness) {
 	}
 }
 
+void LEDStrip::setCalibrationMode(bool isCalibration, int component) {
+	this->isInCalibrationMode = isCalibration;
+	this->calibrationChannelIndex = component;
+}
+
+void LEDStrip::setCalibrationLevels(int channelIndex, int relativeValue) {
+	calibrationBrightnesses[channelIndex] = relativeValue;
+}
+
 void LEDStrip::update(int tick) {
+	if (isInCalibrationMode) {
+		displayCalibration(tick);
+	}
 	if (ticksLeftToPersist >= 0) {
 		ticksLeftToPersist--;
 		if (ticksLeftToPersist == 0 && persistentColor) {
@@ -279,6 +302,45 @@ void LEDStrip::update(int tick) {
 		}
 	} else {
 		flash(tick);
+	}
+}
+
+void LEDStrip::displayCalibration(int tick) {
+	if (((tick / 60) % (2)) == 0 && calibrationChannelIndex != -1) {
+		// Display selected channel (if applicable)
+		for (int i = 0; i < numColors; i++) {
+			if (i == calibrationChannelIndex) { 
+				components[i]->setBrightness(calibrationBrightnesses[calibrationChannelIndex] / 4095.0);
+			} else {
+				components[i]->setBrightness(0);
+			}
+		}
+	} else {
+		// Display RGB
+		for (int i = 0; i < numColors; i++) {
+			if (components[i]->getColor()->hasWhite()) {
+				components[i]->setBrightness(0);
+			} else {
+				if (calibrationBrightnesses == nullptr) {
+					Serial.println("calibrationBrightnesses is null!");
+				}
+				double brightnessAdjustment = (calibrationBrightnesses[i] / 4095.0);
+				if (calibrationChannelIndex == -1) {
+					// Display white because just calibrating that.
+					components[i]->setBrightness(brightnessAdjustment);
+				} else {
+					// Try to match the RGB to the displayed white
+					std::shared_ptr<Color> selectedColor = components[calibrationChannelIndex]->getColor();
+					if (selectedColor->getRed() > 0 && components[i]->getColor()->getRed() > 0) {
+						components[i]->setBrightness(brightnessAdjustment * selectedColor->getRed() / 255.0);
+					} else if (selectedColor->getGreen() > 0 && components[i]->getColor()->getGreen() > 0) {
+						components[i]->setBrightness(brightnessAdjustment * selectedColor->getGreen() / 255.0);
+					} else if (selectedColor->getBlue() > 0 && components[i]->getColor()->getBlue() > 0) {
+						components[i]->setBrightness(brightnessAdjustment * selectedColor->getBlue() / 255.0);
+					}
+				}
+			}
+		}
 	}
 }
 

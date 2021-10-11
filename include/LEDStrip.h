@@ -46,11 +46,12 @@ private:
 	int numColors;
 	// Array of the colors
 	LEDStripComponent ** components;
+	int * calibrationBrightnesses;
 	// A map that maps the difference between red and blue.
 	// Positive values mean more red, negative means more blue.
 	// Identical values will be overwritten, since it's a map.
-	std::vector<LEDStripComponent *> whiteComponents;
-	std::vector<LEDStripComponent *> singleColorComponents;
+	std::vector<int> whiteComponents;
+	std::vector<int> singleColorComponents;
 
 	// Current state
 	std::shared_ptr<Color> currentColor;
@@ -59,6 +60,8 @@ private:
 	bool isToggledOn = true;
 	std::shared_ptr<ColorSequence> colorSequence;
 	int ticksLeftToPersist = -1;
+	bool isInCalibrationMode = false;
+	int calibrationChannelIndex = -1;
 
 	// Methods
 	/**
@@ -70,14 +73,15 @@ private:
 	 * Giving the LED strip component's output, this function sets its output
 	 * to the maximum appropriate level that maintains color accuracy.
 	 */
-	void updateLEDStripComponent(double &red, double &green, double &blue, double factor, LEDStripComponent *);
+	void updateLEDStripComponent(double &red, double &green, double &blue, double factor, int componentIndex);
 
 	/**
 	 * Sets all components to off
 	 */
 	void turnOff();
 public:
-	LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name, Controller& controller);
+	LEDStrip(std::string id, int numColors, LEDStripComponent ** components, std::string name,
+		Controller& controller, int * calibrationBrightnesses = nullptr);
 
 	/**
 	 * @return The number of components in the LED strip.
@@ -149,6 +153,11 @@ public:
 	void flash(int tick);
 
 	/**
+	 * Displays the current calibration output.
+	 */
+	void displayCalibration(int tick);
+
+	/**
 	 * Returns the currently displayed color. The color can be a temporary color,
 	 * or it can be whatever color the color sequence is displaying at this time.
 	 * To determine if it is a temporary color, call getTicksLeftForTempColor()
@@ -161,6 +170,26 @@ public:
 	 * -2 means persistent temporary color
 	 */
 	int getTicksLeftForTempColor();
+
+	/**
+	 * Sets whether the LED strip is in calibration mode.
+	 * 
+	 * When in calibration mode, the LED strip will display white
+	 * with RGB. If a component is selected, it will toggle between
+	 * an RGB representation of that white color, and that component.
+	 * 
+	 * @param isCalibration: If it should be in calibration mode.
+	 * @param component: The component the RGB is being calibrated to.
+	 */
+	void setCalibrationMode(bool isCalibration, int component = -1);
+
+	/**
+	 * The values, relative to the max of 4095, that each channel should
+	 * be.
+	 */
+	void setCalibrationLevels(int channelIndex, int relativeValue);
+
+
 };
 
 #endif

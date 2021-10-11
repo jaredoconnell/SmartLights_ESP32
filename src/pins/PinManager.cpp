@@ -14,24 +14,26 @@ PinManager::PinManager() {
 	}
 }
 
-void PinManager::initializePWMDriver(int addr) {
+void PinManager::initializePWMDriver(int addr, int zeroValue) {
 	// This is needed to prevent a memory leak.
 	auto find = pwmDrivers.find(addr);
 	if (find == pwmDrivers.end()) {
-	// Does not exist, so add it.
-	Adafruit_PWMServoDriver * driver = new Adafruit_PWMServoDriver(addr);
-	pwmDrivers[addr] = driver;
-	driver->reset();
-	
-	driver->begin();
-	// In theory the internal oscillator is 25MHz but it really isn't
-	// that precise. You can 'calibrate' by tweaking this number till
-	// you get the frequency you're expecting!
-	driver->setOscillatorFrequency(27000000);	// The int.osc. is closer to 27MHz
-	driver->setPWMFreq(1200);	// 1600 is the maximum PWM frequency
+		// Does not exist, so add it.
+		Adafruit_PWMServoDriver * driver = new Adafruit_PWMServoDriver(addr);
+		pwmDrivers[addr] = driver;
+		driver->reset();
+		
+		driver->begin();
+		// In theory the internal oscillator is 25MHz but it really isn't
+		// that precise. You can 'calibrate' by tweaking this number till
+		// you get the frequency you're expecting!
+		driver->setOscillatorFrequency(27000000);	// The int.osc. is closer to 27MHz
+		driver->setPWMFreq(1200);	// 1600 is the maximum PWM frequency
 
-	for(int i = 0; i < 16; i++)
-		driver->setPWM(i, 0, 0);
+		for(int i = 0; i < 16; i++) {
+			driver->setPWM(i, 0, 0);
+		}
+		pwmDriverZeroValues[addr] = zeroValue;
 	}
 }
 
@@ -66,7 +68,7 @@ std::shared_ptr<AddressablePin> PinManager::getPin(int i2cAddr, int pinNum) {
 			// Find the PWMServoDriver instance. It must exist first.
 			auto driverFindResultItr = pwmDrivers.find(i2cAddr);
 			if (driverFindResultItr != pwmDrivers.end()) {
-				std::shared_ptr<AddressablePin> newPin = std::make_shared<PWMServoDriverPin>(driverFindResultItr->second, i2cAddr, pinNum);
+				std::shared_ptr<AddressablePin> newPin = std::make_shared<PWMServoDriverPin>(driverFindResultItr->second, i2cAddr, pinNum, pwmDriverZeroValues[i2cAddr]);
 				existingPins[key] = newPin;
 				return newPin;
 			} else {

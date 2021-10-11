@@ -46,6 +46,9 @@ Controller::Controller() {
 	packets[19] = new SetColorPacket(*this);
 	packets[20] = new SetTimePacket(*this);
 	packets[22] = new GetLedStripGroupsPacket(*this);
+	packets[23] = new SetLEDStripCalibrationMode(*this);
+	packets[23] = new SetLEDStripCalibrationMode(*this);
+	packets[24] = new SetLEDStripCalibrationValue(*this);
 }
 
 

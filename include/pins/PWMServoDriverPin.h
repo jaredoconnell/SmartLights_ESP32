@@ -11,10 +11,11 @@ private:
 	Adafruit_PWMServoDriver * driver;
 	int i2cAddr;
 	int pinNum;
+	int minBlack;
 	static std::unordered_map<int, int> nextStart;
 
 public:
-	PWMServoDriverPin(Adafruit_PWMServoDriver * driver, int i2cAddr, int pin);
+	PWMServoDriverPin(Adafruit_PWMServoDriver * driver, int i2cAddr, int pin, int minBlack);
 
 	virtual double setPWMValue(double decimalDutyCycle);
 	virtual int getI2CAddr();
