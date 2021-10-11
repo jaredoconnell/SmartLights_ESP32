@@ -179,7 +179,7 @@ Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
 | 0 | 37 Bytes | The LED Strip or group ID |
-| 2 | 37 Bytes | The Color Sequence ID |
+| 37 | 37 Bytes | The Color Sequence ID |
 
 Packet name: **Schedule LED Strip Change** \
 Packet ID: 10 \
@@ -217,8 +217,8 @@ Data:
 | Index | Size | Data Details |
 | --- | --- | --- |
 | 0 | 37 Bytes | The LED Strip ID |
-| 2 | One Byte | 0 if off, 1 if on |
-| 3 | Two bytes | The LED Strip brightness between 0 and 4095 |
+| 37 | One Byte | 0 if off, 1 if on, 2 if no change |
+| 38 | Two bytes | The LED Strip brightness between 0 and 4095 |
 
 Packet name: **Get Settings** \
 Packet ID: 17 \
