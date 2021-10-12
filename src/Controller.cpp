@@ -96,7 +96,7 @@ void Controller::onConnect(BLEServer* pServer) {
 void Controller::onDisconnect(BLEServer* pServer) {
 	deviceConnected = false;
 	Serial.println("Bluetooth device disconnected");
-	pServer->disconnect(pServer->getConnId());
+	pServer->startAdvertising(); 
 }
 
 void Controller::onWrite(BLECharacteristic *pCharacteristic) {
