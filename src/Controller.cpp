@@ -262,6 +262,10 @@ void Controller::queuePacket(SendablePacket * packetToSend) {
 	queuedPackets.push(packetToSend);
 }
 
+bool Controller::deviceIsConnected() {
+	return deviceConnected;
+}
+
 void Controller::sendLEDStrips() {
 	// Number of packets needed is the rounded up divided by 6.
 	int numLEDStripsPerPacket = 3;

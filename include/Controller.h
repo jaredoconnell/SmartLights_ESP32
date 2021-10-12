@@ -114,6 +114,11 @@ public:
 	void queuePacket(SendablePacket *);
 
 	/**
+	 * @return true if a device is connected. Else false.
+	 */
+	bool deviceIsConnected();
+
+	/**
 	 * Called 60 times per second for updating the colors.
 	 */
 	void onTick(int time);

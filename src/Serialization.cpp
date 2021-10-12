@@ -252,9 +252,6 @@ std::string colorToStr(std::shared_ptr<Color> color) {
 std::string ledStripToStr(LEDStrip * strip) {
 	// first the ID
 	std::string result = strToStr(strip->getID());
-	// Next, the number of colors in the LED strip
-	int numColors = strip->getNumColors();
-	result += static_cast<char>(numColors);
 	// Next, the current color sequence.
 	std::shared_ptr<ColorSequence> currSequence = strip->getCurrentColorSequence();
 	std::string colorSequence;
@@ -276,6 +273,9 @@ std::string ledStripToStr(LEDStrip * strip) {
 		std::shared_ptr<Color> daylight = std::make_shared<Color>(5000);
 		result += colorToStr(daylight);
 	}
+	int numColors = strip->getNumColors();
+		// Next, the number of colors in the LED strip
+	result += static_cast<char>(numColors);
 	// Next is the components.
 	for (int i = 0; i < numColors; i++) {
 		LEDStripComponent * component = strip->getComponent(i);

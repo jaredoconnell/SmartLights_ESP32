@@ -12,6 +12,7 @@ class LEDStrip;
 class LEDStripGroup;
 class ColorSequence;
 class ScheduledChange;
+class AbstractLEDStrip;
 
 class SendablePacket {
 	protected:
@@ -79,6 +80,19 @@ class PacketReceivedNotificationPacket : public SendablePacket {
 	public:
 		PacketReceivedNotificationPacket(Controller & controller,
 			int packetIndex, bool success, bool recognised);
+		virtual std::string getData();
+};
+
+class UpdateLEDStripPacket : public SendablePacket {
+	private:
+		AbstractLEDStrip * ledStrip;
+		bool hasNewOnState = false;
+		bool onState = false;
+		bool hasNewBrightness = false;
+		int newBrightness = 4095;
+	public:
+		UpdateLEDStripPacket(Controller & controller, AbstractLEDStrip * ledStrip,
+			bool newOnState, int newBrightness);
 		virtual std::string getData();
 };
 

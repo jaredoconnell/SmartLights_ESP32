@@ -3,6 +3,7 @@
 #include "AbstractLEDStrip.h"
 #include "LEDStrip.h"
 #include "LEDStripGroup.h"
+#include "packets/sendable_packets/SendablePackets.h"
 
 decode_results results;
 
@@ -81,6 +82,8 @@ void IRController::onCode(REMOTE_CODE code, int ticks) {
             }
             strip->setCurrentBrightness(currentBrightness);
         }
+        if (controller.deviceIsConnected())
+            controller.queuePacket(new UpdateLEDStripPacket(controller, strip, strip->isOn(), strip->getMaxCurrentBrightness()));
     }
 }
 

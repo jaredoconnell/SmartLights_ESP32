@@ -41,17 +41,17 @@ The number of bytes in the sequence is 44 + n * 3. If there are about 10 other b
 | Index | Size | Data Details |
 | --- | --- | --- |
 | 0 | 37 Bytes | The ID of the color strip |
-| 2 | One byte. | The number of colors in the LED strip (typically 1 to 5). <br>Should not exceed 100 (though I cannot see why anyone would do that). |
-| 3 | 37 Bytes. | The current color sequence ID, or 0 if none. |
-| 5 | One byte. | Whether the LED strip is toggled on (1) of off (0) |
-| 6 | Two Bytes. | The current brightness of the LED strip (0-4095) |
-| 8 | One Byte. | Temporary color is active (1 if active, else 0) |
-| 9 | Two Bytes. | Seconds left for temp color (0 if persistent) |
-| 11 | Three Bytes. | The temporary color |
-| n * 5 + 14 | One byte. | The driver ID |
-| n * 5 + 15 | One byte. | The index of the driver pin |
-| n * 5 + 16 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
-| N * 5 + 14 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
+| 37 | 37 Bytes. | The current color sequence ID, or 0 if none. |
+| 74 | One byte. | Whether the LED strip is toggled on (1) of off (0) |
+| 75 | Two Bytes. | The current brightness of the LED strip (0-4095) |
+| 77 | One Byte. | Temporary color is active (1 if active, else 0) |
+| 78 | Two Bytes. | Seconds left for temp color (0 if persistent) |
+| 80 | Three Bytes. | The temporary color |
+| 83 | One byte. | The number of colors in the LED strip (typically 1 to 5). <br>Should not exceed 100 (though I cannot see why anyone would do that). |
+| n * 5 + 84 | One byte. | The driver ID |
+| n * 5 + 85 | One byte. | The index of the driver pin |
+| n * 5 + 86 | Three bytes. | The color given by the diodes on this pin of the LED Strip |
+| N * 5 + 84 | Up to 30 | Name of the LED strip as a char array up to 29 characters. |
 
 For context, in an RGBCCT color strip, which is made up of red, green, blue, soft white, and  white, the data for the single LED strip would be 139 bytes long. That means, with overhead, it is realistic to pack about 3 LED strips into a single packet.
 
@@ -386,3 +386,17 @@ Data:
 | --- | --- | --- |
 | 0 | Four bytes | The packet ID |
 | 4 | One Byte | 0 if packet recieved, 1 if missed, 2 if not recognised |
+
+
+Packet name: **LED Strip or Group Update** \
+Packet ID: 243 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | 37 Bytes | The LED strip or Group ID |
+| 37 | One Byte | Right-most bit represents on-state change. Second bit represents brightness change. Third represents temp color change. Fourth represents color sequence change. |
+| ? | One byte | The power state. 1 for on. 0 for off |
+| ? | Two bytes | The LED Strip brightness between 0 and 4095 |
+| ? | Three bytes | The Color |
+| ? | Four bytes | The number of ms |
+| ? | 37 Bytes | The Color Sequence ID |

@@ -5,6 +5,7 @@
 #include "Controller.h"
 #include "Color.h"
 #include "LEDStrip.h"
+#include "AbstractLEDStrip.h"
 #include "ColorSequence.h"
 
 #include <iterator>
@@ -184,6 +185,34 @@ std::string PacketReceivedNotificationPacket::getData() {
 
 	output += intToStr(packetIndex);
 	output += success ? (recognised ? 0 : 2 ) : 1;
+
+	return output;
+}
+// ------------------------------------------------------------------------------ //
+UpdateLEDStripPacket::UpdateLEDStripPacket(Controller & controller, AbstractLEDStrip * ledStrip,
+			bool newOnState, int newBrightness)
+	: SendablePacket(controller), ledStrip(ledStrip), hasNewOnState(true), onState(newOnState),
+		hasNewBrightness(true), newBrightness(newBrightness)
+{}
+
+std::string UpdateLEDStripPacket::getData() {
+	std::string output = "";
+	// Packet ID
+	output += static_cast<char>(243);
+
+	uint8_t packetData = 0;
+
+	if (hasNewOnState)
+		packetData |= 0b00000001;
+	if (hasNewBrightness)
+		packetData |= 0b00000010;
+
+	output += strToStr(ledStrip->getID());
+	output += static_cast<char>(packetData);
+	if (hasNewOnState)
+		output += onState ? 1 : 0;
+	if (hasNewBrightness)
+		output += shortToStr(newBrightness);
 
 	return output;
 }
