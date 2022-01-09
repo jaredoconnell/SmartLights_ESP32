@@ -58,6 +58,12 @@ void Controller::init() {
 	// Create the BLE Device
 	BLEDevice::init("LED Strip Controller"); // Give it a name
 
+	// Set high power level
+	for (int i = ESP_BLE_PWR_TYPE_CONN_HDL0; i <= ESP_BLE_PWR_TYPE_NUM; i++) {
+		esp_ble_power_type_t powerType = static_cast<esp_ble_power_type_t>(i);
+		esp_ble_tx_power_set(powerType, ESP_PWR_LVL_P9);
+	}
+
 	// Create the BLE Server
 	BLEServer *pServer = BLEDevice::createServer();
 	pServer->setCallbacks(this);
