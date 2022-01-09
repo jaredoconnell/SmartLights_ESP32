@@ -6,6 +6,8 @@
 #include "packets/sendable_packets/SendablePackets.h"
 #include "packets/received_packets/ReceivedPackets.h"
 #include "Serialization.h"
+#include "IRController.h"
+#include "BasicIRController.h"
 
 #include <string>
 #include <sstream>
@@ -67,16 +69,16 @@ void Controller::init() {
 
 	// Create a BLE Characteristic
 	pCharacteristic = pService->createCharacteristic(
-											CHARACTERISTIC_UUID_TX,
-											BLECharacteristic::PROPERTY_NOTIFY
-										);
+		CHARACTERISTIC_UUID_TX,
+		BLECharacteristic::PROPERTY_NOTIFY
+	);
 											
 	pCharacteristic->addDescriptor(new BLE2902());
 
 	BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-																				 CHARACTERISTIC_UUID_RX,
-																				 BLECharacteristic::PROPERTY_WRITE
-																			 );
+		CHARACTERISTIC_UUID_RX,
+		BLECharacteristic::PROPERTY_WRITE
+	);
 
 	pCharacteristic->setCallbacks(this);
 
@@ -86,11 +88,18 @@ void Controller::init() {
 	// Start advertising
 	pServer->getAdvertising()->start();
 	Serial.println("Waiting a client connection to notify...");
+
+	// IR
+	if (irController == nullptr) {
+		irController = new BasicIRController(*this);
+	}
+	irController->setup();
 }
 
 void Controller::onConnect(BLEServer* pServer) {
 	deviceConnected = true;
 	Serial.println("Bluetooth device connected");
+	pServer->startAdvertising(); 
 };
 
 void Controller::onDisconnect(BLEServer* pServer) {
@@ -213,17 +222,20 @@ PinManager& Controller::getPinManager() {
 int lastSecond = 0;
 
 void Controller::onTick(int time) {
+	irController->tick();
+
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	time_t tt = std::chrono::system_clock::to_time_t(now);
     tm utc_tm = *gmtime(&tt);
 	if (lastSecond != utc_tm.tm_sec) {
 		if (utc_tm.tm_sec == 0) {
+			Serial.print("Date: ");
 			Serial.print(utc_tm.tm_year + 1900);
 			Serial.print(" ");
 			Serial.print(utc_tm.tm_mon + 1);
 			Serial.print(" ");
-			Serial.print(utc_tm.tm_mday);
-			Serial.print(" ");
+			Serial.println(utc_tm.tm_mday);
+			Serial.print("Time: ");
 			Serial.print(utc_tm.tm_hour);
 			Serial.print(" ");
 			Serial.print(utc_tm.tm_min);
@@ -317,6 +329,10 @@ void Controller::sendScheduledChanges() {
 		// Remember, the allChanges vector must be copied to prevent lifetime issues
 		queuePacket(new SendScheduledChangesPacket(*this, allChanges, i * numChangesPerPacket, numChangesPerPacket));
 	}
+}
+
+void Controller::setIRController(IRController* irController) {
+	this->irController = irController;
 }
 
 void Controller::sendSettings() {

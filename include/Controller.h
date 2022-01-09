@@ -11,6 +11,7 @@
 class LEDStrip;
 class LEDStripGroup;
 class AbstractLEDStrip;
+class IRController;
 class ColorSequence;
 
 class BLECharacteristic;
@@ -27,6 +28,9 @@ private:
 	std::shared_ptr<std::map<std::string, LEDStripGroup *>> ledStripGroups;
 
 	PinManager pinManager;
+
+	// IR Controls
+	IRController * irController = nullptr;
 	
 	// Bluetooth stuff
 	BLECharacteristic *pCharacteristic;
@@ -122,6 +126,9 @@ public:
 	 * Called 60 times per second for updating the colors.
 	 */
 	void onTick(int time);
+
+	// IR Stuff
+	void setIRController(IRController*);
 
 	// Bluetooth stuff
 	// BLE lib needed functions.

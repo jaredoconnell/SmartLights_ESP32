@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "time.h"
 #include "custom/custom.h"
-#include "IRController.h"
 
 #include <cstdlib>
 
@@ -14,9 +13,6 @@
 
 // Controller
 Controller controller;
-
-// IR
-IRController irController(controller);
 
 // TIMER
 volatile int interruptCounter;
@@ -44,16 +40,12 @@ void setup() {
 	// out for this!
 	Wire.setClock(400000);
 
-	// IR
-	irController.setup();
-
+	onPreInit(controller);
 	controller.init();
 	onPostInit(controller);
 }
 
 void loop() {
-	// IR
-	irController.tick();
 
 	// Ticks
 	if (interruptCounter > 0) {

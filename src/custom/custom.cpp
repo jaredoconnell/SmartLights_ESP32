@@ -2,7 +2,12 @@
 #include "Setting.h"
 #include "LEDStrip.h"
 #include "LEDStripGroup.h"
+#include "BasicIRController.h"
 #include <memory>
+
+void onPreInit(Controller& controller) {
+    controller.setIRController(new BasicIRController(controller));
+}
 
 void onPostInit(Controller& controller) {
     /*

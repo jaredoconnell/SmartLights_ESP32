@@ -5,27 +5,47 @@
 #include "Controller.h"
 
 enum class REMOTE_CODE {
+    // Basic
     ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, ZERO,
-    ASTRIC, HASHTAG, LEFT, RIGHT, UP, DOWN, OKAY, UNKNOWN
+    ASTRIC, HASHTAG, LEFT, RIGHT, UP, DOWN, OKAY, UNKNOWN,
+    // 44 Key LED Strip Remote
+    BRIGHTNESS_UP, BRIGHTNESS_DOWN, PLAY_PAUSE, POWER,
+    RED, GREEN, BLUE, WHITE,
+    RED1, GREEN1, BLUE1, WHITE1,
+    RED2, GREEN2, BLUE2, WHITE2,
+    RED3, GREEN3, BLUE3, WHITE3,
+    RED4, GREEN4, BLUE4, WHITE4,
+    RED_UP, GREEN_UP, BLUE_UP, QUICK,
+    RED_DOWN, GREEN_DOWN, BLUE_DOWN, SLOW,
+    DIY1, DIY2, DIY3, AUTO,
+    DIY4, DIY5, DIY6, FLASH,
+    JUMP3, JUMP7, FADE3, FADE7
+
 };
 
 const uint16_t IR_RECEIVE_PIN = 36;
 
 class IRController {
-private:
+protected:
     Controller& controller;
     int selectedIndex = 0;
     REMOTE_CODE lastCode = REMOTE_CODE::UNKNOWN;
 
-    void onCode(REMOTE_CODE code, int ticks);
-    REMOTE_CODE getCode(int code);
-    int getIntVal(REMOTE_CODE code);
+    virtual void onCode(REMOTE_CODE code, int ticks) = 0;
+    virtual REMOTE_CODE getCode(int code) = 0;
     AbstractLEDStrip * getLEDStripAtIndex();
+
+    void flashSelectedLEDStrip();
+    void togglePower();
+    void brightnessUp();
+    void brightnessDown();
+
+    void updateLEDStrip(AbstractLEDStrip *);
 public:
     IRController(Controller& controller);
 
-    void setup();
-    void tick();
+    virtual void setup();
+    virtual void tick();
 
 };
 

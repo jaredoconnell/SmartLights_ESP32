@@ -12,10 +12,6 @@ IRController::IRController(Controller& controller)
 {
 }
 
-void IRController::setup() {
-    IrReceiver.begin(IR_RECEIVE_PIN, false);
-}
-
 AbstractLEDStrip * IRController::getLEDStripAtIndex() {
     AbstractLEDStrip * strip = nullptr;
     if (selectedIndex < controller.getLedStrips()->size()) {
@@ -35,129 +31,21 @@ AbstractLEDStrip * IRController::getLEDStripAtIndex() {
     return strip;
 }
 
-void IRController::onCode(REMOTE_CODE code, int ticks) {
-    int val = getIntVal(code);
-    if (val != -1) {
-        int size = controller.getLedStrips()->size() + controller.getLedStripGroups()->size();
-        selectedIndex = val % size;
-        AbstractLEDStrip * strip = getLEDStripAtIndex();
-        strip->persistColor(std::make_shared<Color>(50, 50, 255), 100);
-        return;
-    }
-
-    AbstractLEDStrip * strip = getLEDStripAtIndex();
-    if (strip != nullptr) {
-        if (code == REMOTE_CODE::OKAY) {
-            if (ticks >= 2000) {
-                strip->setOnState(!strip->isOn());
-            }
-        } else if (code == REMOTE_CODE::UP) {
-            int currentBrightness = strip->getMaxCurrentBrightness();
-            if (currentBrightness < 10) {
-                currentBrightness += 1;
-            } else if (currentBrightness < 100) {
-                currentBrightness += 10;
-            } else if (currentBrightness < 1000) {
-                currentBrightness += 100;
-            } else {
-                currentBrightness += 500;
-            }
-            if (currentBrightness > 4095) {
-                currentBrightness = 4095;
-            }
-            strip->setCurrentBrightness(currentBrightness);
-        } else if (code == REMOTE_CODE::DOWN) {
-            int currentBrightness = strip->getMinCurrentBrightness();
-            if (currentBrightness < 10) {
-                currentBrightness -= 1;
-            } else if (currentBrightness < 100) {
-                currentBrightness -= 10;
-            } else if (currentBrightness < 1000) {
-                currentBrightness -= 100;
-            } else {
-                currentBrightness -= 500;
-            }
-            if (currentBrightness < 1) {
-                currentBrightness = 1;
-            }
-            strip->setCurrentBrightness(currentBrightness);
-        }
-        if (controller.deviceIsConnected())
-            controller.queuePacket(new UpdateLEDStripPacket(controller, strip, strip->isOn(), strip->getMaxCurrentBrightness()));
-    }
+void IRController::setup() {
+    IrReceiver.begin(IR_RECEIVE_PIN, false);
 }
 
-int IRController::getIntVal(REMOTE_CODE code) {
-    switch (code) {
-        case REMOTE_CODE::ONE:
-            return 1;
-        case REMOTE_CODE::TWO:
-            return 2;
-        case REMOTE_CODE::THREE:
-            return 3;
-        case REMOTE_CODE::FOUR:
-            return 4;
-        case REMOTE_CODE::FIVE:
-            return 5;
-        case REMOTE_CODE::SIX:
-            return 6;
-        case REMOTE_CODE::SEVEN:
-            return 7;
-        case REMOTE_CODE::EIGHT:
-            return 8;
-        case REMOTE_CODE::NINE:
-            return 9;
-        case REMOTE_CODE::ZERO:
-            return 0;
-        default:
-            return -1;
-    }
-}
-
-REMOTE_CODE IRController::getCode(int code) {
-    switch (code) {
-        case 0x45:
-            return REMOTE_CODE::ONE;
-        case 0x46:
-            return REMOTE_CODE::TWO;
-        case 0x47:
-            return REMOTE_CODE::THREE;
-        case 0x44:
-            return REMOTE_CODE::FOUR;
-        case 0x40:
-            return REMOTE_CODE::FIVE;
-        case 0x43:
-            return REMOTE_CODE::SIX;
-        case 0x7:
-            return REMOTE_CODE::SEVEN;
-        case 0x15:
-            return REMOTE_CODE::EIGHT;
-        case 0x9:
-            return REMOTE_CODE::NINE;
-        case 0x19:
-            return REMOTE_CODE::ZERO;
-        case 0x16:
-            return REMOTE_CODE::ASTRIC;
-        case 0xD:
-            return REMOTE_CODE::HASHTAG;
-        case 0x1C:
-            return REMOTE_CODE::OKAY;
-        case 0x18:
-            return REMOTE_CODE::UP;
-        case 0x52:
-            return REMOTE_CODE::DOWN;
-        case 0x8:
-            return REMOTE_CODE::LEFT;
-        case 0x5A:
-            return REMOTE_CODE::RIGHT;
-        default:
-            return REMOTE_CODE::UNKNOWN;
-    } 
-}
 
 void IRController::tick() {
     if (IrReceiver.decode()) {
 		// Check if the buffer overflowed
+        Serial.printf("Command: %X\n", IrReceiver.decodedIRData.command);
+        Serial.printf("Protocol: %X\n", IrReceiver.decodedIRData.protocol);
+        Serial.printf("Address: %X\n", IrReceiver.decodedIRData.address);
+        Serial.printf("Extra: %X\n", IrReceiver.decodedIRData.extra);
+        Serial.printf("Flags: %X\n", IrReceiver.decodedIRData.flags);
+        Serial.printf("Num Bits: %d\n", IrReceiver.decodedIRData.numberOfBits);
+        Serial.printf("Raw: %X\n", IrReceiver.decodedIRData.decodedRawData);
         if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_WAS_OVERFLOW) {
             Serial.println("IR code too long. Edit IRremoteInt.h and increase RAW_BUFFER_LENGTH");
         } else {
@@ -166,4 +54,61 @@ void IRController::tick() {
         }
         IrReceiver.resume();   
 	}
+}
+
+void IRController::flashSelectedLEDStrip() {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    strip->persistColor(std::make_shared<Color>(50, 50, 255), 100);
+    updateLEDStrip(strip);
+}
+
+void IRController::togglePower() {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    strip->setOnState(!strip->isOn());
+    updateLEDStrip(strip);
+}
+
+void IRController::brightnessUp() {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    int currentBrightness = strip->getMaxCurrentBrightness();
+    if (currentBrightness < 10) {
+        currentBrightness += 1;
+    } else if (currentBrightness < 100) {
+        currentBrightness += 10;
+    } else if (currentBrightness < 1000) {
+        currentBrightness += 100;
+    } else {
+        currentBrightness += 500;
+    }
+    if (currentBrightness > 4095) {
+        currentBrightness = 4095;
+    }
+    strip->setCurrentBrightness(currentBrightness);
+    updateLEDStrip(strip);
+}
+
+void IRController::brightnessDown() {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    int currentBrightness = strip->getMinCurrentBrightness();
+    if (currentBrightness < 10) {
+        currentBrightness -= 1;
+    } else if (currentBrightness < 100) {
+        currentBrightness -= 10;
+    } else if (currentBrightness < 1000) {
+        currentBrightness -= 100;
+    } else {
+        currentBrightness -= 500;
+    }
+    if (currentBrightness < 1) {
+        currentBrightness = 1;
+    }
+    strip->setCurrentBrightness(currentBrightness);
+    updateLEDStrip(strip);
+}
+
+void IRController::updateLEDStrip(AbstractLEDStrip *) {
+    if (controller.deviceIsConnected()) {
+        AbstractLEDStrip * strip = getLEDStripAtIndex();
+        controller.queuePacket(new UpdateLEDStripPacket(controller, strip, strip->isOn(), strip->getMaxCurrentBrightness()));
+    }
 }
