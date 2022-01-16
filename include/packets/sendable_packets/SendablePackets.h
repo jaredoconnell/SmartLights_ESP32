@@ -90,9 +90,11 @@ class UpdateLEDStripPacket : public SendablePacket {
 		bool onState = false;
 		bool hasNewBrightness = false;
 		int newBrightness = 4095;
+		bool hasNewColor = false;
+		std::shared_ptr<Color> newColor;
+		int msLeft = 0;
 	public:
-		UpdateLEDStripPacket(Controller & controller, AbstractLEDStrip * ledStrip,
-			bool newOnState, int newBrightness);
+		UpdateLEDStripPacket(Controller & controller, AbstractLEDStrip * ledStrip, bool hasNewColor);
 		virtual std::string getData();
 };
 

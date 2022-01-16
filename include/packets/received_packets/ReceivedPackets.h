@@ -147,4 +147,12 @@ class SetLEDStripCalibrationValue : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+class DeleteColorSequencePacket : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		DeleteColorSequencePacket(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

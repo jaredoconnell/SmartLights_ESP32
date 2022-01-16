@@ -189,10 +189,10 @@ std::string PacketReceivedNotificationPacket::getData() {
 	return output;
 }
 // ------------------------------------------------------------------------------ //
-UpdateLEDStripPacket::UpdateLEDStripPacket(Controller & controller, AbstractLEDStrip * ledStrip,
-			bool newOnState, int newBrightness)
-	: SendablePacket(controller), ledStrip(ledStrip), hasNewOnState(true), onState(newOnState),
-		hasNewBrightness(true), newBrightness(newBrightness)
+UpdateLEDStripPacket::UpdateLEDStripPacket(Controller & controller, AbstractLEDStrip * ledStrip, bool hasNewColor)
+	: SendablePacket(controller), ledStrip(ledStrip), hasNewOnState(true), onState(ledStrip->isOn()),
+		hasNewBrightness(true), newBrightness(ledStrip->getMaxCurrentBrightness()),
+		hasNewColor(hasNewColor), newColor(ledStrip->getDisplayedColor()), msLeft(ledStrip->getMsLeftForTempColor())
 {}
 
 std::string UpdateLEDStripPacket::getData() {
@@ -206,6 +206,8 @@ std::string UpdateLEDStripPacket::getData() {
 		packetData |= 0b00000001;
 	if (hasNewBrightness)
 		packetData |= 0b00000010;
+	if (hasNewColor)
+		packetData |= 0b00000100;
 
 	output += strToStr(ledStrip->getID());
 	output += static_cast<char>(packetData);
@@ -213,6 +215,10 @@ std::string UpdateLEDStripPacket::getData() {
 		output += onState ? 1 : 0;
 	if (hasNewBrightness)
 		output += shortToStr(newBrightness);
+	if (hasNewColor) {
+		output += colorToStr(newColor);
+		output += intToStr(msLeft);
+	}
 
 	return output;
 }

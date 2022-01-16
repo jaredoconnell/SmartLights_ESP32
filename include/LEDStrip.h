@@ -179,14 +179,21 @@ public:
 	 * or it can be whatever color the color sequence is displaying at this time.
 	 * To determine if it is a temporary color, call getTicksLeftForTempColor()
 	 */
-	std::shared_ptr<Color> getDisplayedColor();
+	virtual std::shared_ptr<Color> getDisplayedColor();
 
 	/**
 	 * Returns the number of ticks left for the temporary color.
 	 * -1 means no temporary color
 	 * -2 means persistent temporary color
 	 */
-	int getTicksLeftForTempColor();
+	virtual int getTicksLeftForTempColor();
+
+	/**
+	 * Returns the number of ms left for the temporary color.
+	 * -1 means no temporary color
+	 * 0 means persistent temporary color
+	 */
+	virtual int getMsLeftForTempColor();
 
 	/**
 	 * Sets whether the LED strip is in calibration mode.

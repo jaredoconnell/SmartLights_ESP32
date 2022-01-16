@@ -22,6 +22,10 @@ ColorSequence& ColorSequence::operator=(const ColorSequence& other) {
 	return *this;
 }
 
+ColorSequence::~ColorSequence() {
+	Serial.println("ColorSequence object deleted!");
+}
+
 void ColorSequence::updateCurrentColor(int ticks) {
 	if (totalCycleTime > 0) {
 				int tickInCycle = ticks % totalCycleTime;

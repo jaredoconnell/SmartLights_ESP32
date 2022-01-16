@@ -52,6 +52,18 @@ public:
 	virtual void persistColor(std::shared_ptr<Color> color, int seconds, bool override);
 
     const std::vector<std::string>& getLEDStripIDs();
+
+	/**
+	 * Displays currently displayed color, or null if not the same between LED strips.
+	 */
+	virtual std::shared_ptr<Color> getDisplayedColor();
+
+	/**
+	 * Returns the number of ticks left for the temporary color.
+	 * -1 means no temporary color or LED strips are different.
+	 * -2 means persistent temporary color
+	 */
+	virtual int getMsLeftForTempColor();
 };
 
 #endif

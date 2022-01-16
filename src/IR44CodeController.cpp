@@ -41,6 +41,18 @@ void IR44CodeRemoteController::onCode(REMOTE_CODE code, int ticks) {
             brightnessDown();
         } else if (isColorButton(code)) {
             setColorFromCode(strip, code, ticks);
+        } else if (code == REMOTE_CODE::RED_DOWN) {
+            adjustColor(-1, 0, 0);
+        } else if (code == REMOTE_CODE::RED_UP) {
+            adjustColor(1, 0, 0);
+        } else if (code == REMOTE_CODE::GREEN_DOWN) {
+            adjustColor(0, -1, 0);
+        } else if (code == REMOTE_CODE::GREEN_UP) {
+            adjustColor(0, 1, 0);
+        } else if (code == REMOTE_CODE::BLUE_DOWN) {
+            adjustColor(0, 0, -1);
+        } else if (code == REMOTE_CODE::BLUE_UP) {
+            adjustColor(0, 0, 1);
         }
     }
 }
@@ -115,7 +127,7 @@ void IR44CodeRemoteController::setColorFromCode(AbstractLEDStrip * strip, REMOTE
         default:
             return;
     }
-    updateLEDStrip(strip);
+    updateLEDStrip(strip, true);
 }
 
 bool IR44CodeRemoteController::isColorButton(REMOTE_CODE code) {

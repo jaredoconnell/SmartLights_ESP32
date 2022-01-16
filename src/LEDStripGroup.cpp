@@ -80,3 +80,33 @@ void LEDStripGroup::setCurrentBrightness(int brightness) {
 const std::vector<std::string>& LEDStripGroup::getLEDStripIDs() {
 	return stripIDs;
 }
+
+std::shared_ptr<Color> LEDStripGroup::getDisplayedColor() {
+	std::shared_ptr<Color> color;
+	for (std::string stripID : stripIDs) {
+		AbstractLEDStrip * strip = controller.getLEDStrip(stripID);
+		if (!color) {
+			color = strip->getDisplayedColor();
+		} else {
+			if (!color->equals(strip->getDisplayedColor().get())) {
+				return nullptr;
+			}
+		}
+	}
+	return color;
+}
+
+int LEDStripGroup::getMsLeftForTempColor() {
+	int result = -3;
+	for (std::string stripID : stripIDs) {
+		AbstractLEDStrip * strip = controller.getLEDStrip(stripID);
+		if (result == -3) {
+			result = strip->getMsLeftForTempColor();
+		} else {
+			if (result != strip->getMsLeftForTempColor()) {
+				return -1;
+			}
+		}
+	}
+	return result;
+}

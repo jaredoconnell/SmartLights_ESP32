@@ -21,6 +21,7 @@ private:
 	std::shared_ptr<Color> currentColor;
 public:
 	ColorSequence(std::string id, std::vector<std::shared_ptr<Color>> colors, int sustainTime, int transitionTime, int transitionTypeID, std::string name);
+	~ColorSequence();
 	std::string& getID();
 	std::string& getName();
 

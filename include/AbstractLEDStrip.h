@@ -83,6 +83,20 @@ public:
 	 */
 	virtual void persistColor(std::shared_ptr<Color> color, int seconds, bool override) = 0;
 
+	/**
+	 * Returns the currently displayed color. The color can be a temporary color,
+	 * or it can be whatever color the color sequence is displaying at this time.
+	 * To determine if it is a temporary color, call getTicksLeftForTempColor()
+	 */
+	virtual std::shared_ptr<Color> getDisplayedColor() = 0;
+
+	/**
+	 * Returns the number of ms left for the temporary color.
+	 * -1 means no temporary color
+	 * 0 means persistent temporary color
+	 */
+	virtual int getMsLeftForTempColor() = 0;
+
 };
 
 #endif

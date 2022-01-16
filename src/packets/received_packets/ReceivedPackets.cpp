@@ -306,3 +306,22 @@ void SetLEDStripCalibrationValue::parse(std::istream &data) {
 	Serial.println("Done.");
 }
 
+
+// ---------------------------------------------------- //
+
+DeleteColorSequencePacket::DeleteColorSequencePacket(Controller & controller)
+	: controller(controller)
+{}
+void DeleteColorSequencePacket::parse(std::istream &data) {
+	Serial.println("Got packet DeleteColorSequencePacket");
+	std::string colorSequenceID = getString(data);
+	std::shared_ptr<ColorSequence> colorSequence = controller.getColorSequence(colorSequenceID);
+	
+	if (colorSequence) {
+		controller.deleteColorSequence(colorSequence);
+		Serial.println("Color Sequence cleared.");
+	} else {
+		Serial.println("Color Sequence not found. Could not delete.");
+	}
+}
+

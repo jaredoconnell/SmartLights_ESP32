@@ -228,8 +228,10 @@ void LEDStrip::persistColor(std::shared_ptr<Color> color, int ms, bool override)
 
 void LEDStrip::setColorSequence(std::shared_ptr<ColorSequence> colorSequence) {
 	this->colorSequence = colorSequence;
-	ticksLeftToPersist = -1;
-	persistentColor = nullptr;
+	if (colorSequence) {
+		ticksLeftToPersist = -1;
+		persistentColor = nullptr;
+	}
 }
 
 std::shared_ptr<Color> LEDStrip::getDisplayedColor() {
@@ -238,6 +240,12 @@ std::shared_ptr<Color> LEDStrip::getDisplayedColor() {
 
 int LEDStrip::getTicksLeftForTempColor() {
 	return this->ticksLeftToPersist;
+}
+
+int LEDStrip::getMsLeftForTempColor() {
+	if (ticksLeftToPersist <= 0)
+		return 0;
+	return (this->ticksLeftToPersist * 1667) / 100;
 }
 
 std::shared_ptr<ColorSequence> LEDStrip::getCurrentColorSequence() {

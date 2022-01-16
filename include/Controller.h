@@ -67,6 +67,11 @@ public:
 	 */
 	void addColorSequence(ColorSequence * seq);
 
+	/**
+	 * Deletes the color sequence from the ESP32.
+	 */
+	void deleteColorSequence(std::shared_ptr<ColorSequence> seq);
+
 	std::shared_ptr<ColorSequence> getColorSequence(std::string& id);
 	AbstractLEDStrip * getLEDStrip(std::string& id);
 

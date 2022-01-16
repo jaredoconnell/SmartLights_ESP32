@@ -39,8 +39,9 @@ protected:
     void togglePower();
     void brightnessUp();
     void brightnessDown();
+    void adjustColor(int diffR, int diffG, int diffB);
 
-    void updateLEDStrip(AbstractLEDStrip *);
+    void updateLEDStrip(AbstractLEDStrip *, bool hasNewColor);
 public:
     IRController(Controller& controller);
 

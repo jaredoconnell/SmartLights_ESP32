@@ -282,6 +282,13 @@ Data:
 | 37 | One byte | The index of the selected component |
 | 38 | Two bytes | The calibrated value for the component |
 
+Packet name: **Delete Color Sequence** \
+Packet ID: 25 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | 37 Bytes	| The Color Sequence ID |
+
 ---
 ### From ESP32 to phone:
 

@@ -51,6 +51,7 @@ Controller::Controller() {
 	packets[23] = new SetLEDStripCalibrationMode(*this);
 	packets[23] = new SetLEDStripCalibrationMode(*this);
 	packets[24] = new SetLEDStripCalibrationValue(*this);
+	packets[25] = new DeleteColorSequencePacket(*this);
 }
 
 
@@ -184,6 +185,18 @@ void Controller::addColorSequence(ColorSequence * seq) {
 	} else {
 		*(findResult->second.get()) = *seq; // Replaces with pointer to new one
 	}
+}
+
+void Controller::deleteColorSequence(std::shared_ptr<ColorSequence> seq) {
+	// Remove color sequence from use
+	for (auto strip : *ledStrips) {
+		if (strip.second->getCurrentColorSequence().get() == seq.get()) {
+			strip.second->setColorSequence(nullptr);
+		}
+	}
+
+	// Now remove from map
+	colorSequences.erase(seq->getID());
 }
 
 std::shared_ptr<ColorSequence> Controller::getColorSequence(std::string& id) {

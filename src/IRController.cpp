@@ -62,13 +62,13 @@ void IRController::tick() {
 void IRController::flashSelectedLEDStrip() {
     AbstractLEDStrip * strip = getLEDStripAtIndex();
     strip->persistColor(std::make_shared<Color>(50, 50, 255), 150, true);
-    updateLEDStrip(strip);
+    updateLEDStrip(strip, false);
 }
 
 void IRController::togglePower() {
     AbstractLEDStrip * strip = getLEDStripAtIndex();
     strip->setOnState(!strip->isOn());
-    updateLEDStrip(strip);
+    updateLEDStrip(strip, false);
 }
 
 void IRController::brightnessUp() {
@@ -87,7 +87,7 @@ void IRController::brightnessUp() {
         currentBrightness = 4095;
     }
     strip->setCurrentBrightness(currentBrightness);
-    updateLEDStrip(strip);
+    updateLEDStrip(strip, false);
 }
 
 void IRController::brightnessDown() {
@@ -106,12 +106,48 @@ void IRController::brightnessDown() {
         currentBrightness = 1;
     }
     strip->setCurrentBrightness(currentBrightness);
-    updateLEDStrip(strip);
+    updateLEDStrip(strip, false);
 }
 
-void IRController::updateLEDStrip(AbstractLEDStrip *) {
+
+void IRController::adjustColor(int diffR, int diffG, int diffB) {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    int msLeft = strip->getMsLeftForTempColor();
+    std::shared_ptr<Color> color = strip->getDisplayedColor();
+    if (msLeft == -1 || !color) {
+        // Red flash to show that it's not supported.
+        strip->persistColor(std::make_shared<Color>(255, 0, 0), 500, true);
+        return;
+    }
+    // TODO: Support color sequences with 1 color
+    
+    int newRed = color->getRed() + diffR;
+    int newGreen = color->getGreen() + diffG;
+    int newBlue = color->getBlue() + diffB;
+    if (newRed < 0)
+        newRed = 0;
+    if (newGreen < 0)
+        newGreen = 0;
+    if (newBlue < 0)
+        newBlue = 0;
+    if (newRed > 255)
+        newRed = 255;
+    if (newGreen > 255)
+        newGreen = 255;
+    if (newBlue > 255)
+        newBlue = 255;
+
+    std::shared_ptr<Color> newColor = std::make_shared<Color>(newRed, newGreen, newBlue);
+
+    strip->persistColor(newColor, msLeft, false);
+
+
+    updateLEDStrip(strip, true);
+}
+
+void IRController::updateLEDStrip(AbstractLEDStrip *, bool hasNewColor) {
     if (controller.deviceIsConnected()) {
         AbstractLEDStrip * strip = getLEDStripAtIndex();
-        controller.queuePacket(new UpdateLEDStripPacket(controller, strip, strip->isOn(), strip->getMaxCurrentBrightness()));
+        controller.queuePacket(new UpdateLEDStripPacket(controller, strip, hasNewColor));
     }
 }
