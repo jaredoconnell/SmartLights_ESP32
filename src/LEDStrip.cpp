@@ -49,7 +49,7 @@ void LEDStrip::turnOff() {
 
 void LEDStrip::displayColor(std::shared_ptr<Color> color) {
 
-	if (!isToggledOn) {
+	if (!isOn()) {
 		turnOff();
 		return;
 	}
@@ -213,7 +213,7 @@ void LEDStrip::updateLEDStripComponent(double &red, double &green, double &blue,
 	blue -= componentColor->getBlue() * brightness;
 }
 
-void LEDStrip::persistColor(std::shared_ptr<Color> color, int ms) {
+void LEDStrip::persistColor(std::shared_ptr<Color> color, int ms, bool override) {
 	this->currentColor = color;
 	if (ms == 0) {
 		persistentColor = std::make_shared<Color>(*color);
@@ -223,6 +223,7 @@ void LEDStrip::persistColor(std::shared_ptr<Color> color, int ms) {
 		ticksLeftToPersist = 1 + (ms * 100 / 1667);
 	}
 	displayColor(color);
+	this->isTempOverrideOn = override;
 }
 
 void LEDStrip::setColorSequence(std::shared_ptr<ColorSequence> colorSequence) {
@@ -245,15 +246,16 @@ std::shared_ptr<ColorSequence> LEDStrip::getCurrentColorSequence() {
 
 
 bool LEDStrip::isOn() {
-	return this->isToggledOn;
+	return this->isToggledOn || this->isTempOverrideOn;
 }
 
 int LEDStrip::getCurrentBrightness() {
 	return currentBrightness;
 }
 void LEDStrip::setOnState(bool on) {
-	bool changed = on != this->isToggledOn;
+	bool changed = on != this->isToggledOn || isTempOverrideOn;
 	this->isToggledOn = on;
+	isTempOverrideOn = false;
 
 	if (currentColor && changed) {
 		displayColor(currentColor);
@@ -289,6 +291,7 @@ void LEDStrip::update(int tick) {
 			// The temp color is over, but there is a persistent color ready
 			ticksLeftToPersist = -2;
 			currentColor = std::make_shared<Color>(persistentColor.get());
+			isTempOverrideOn = false;
 			displayColor(currentColor);
 		}
 	} else if (ticksLeftToPersist == -2) {

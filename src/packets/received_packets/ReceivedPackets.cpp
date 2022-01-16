@@ -189,10 +189,11 @@ void SetColorPacket::parse(std::istream &data) {
 	std::string LEDStripID = getString(data);
 	std::shared_ptr<Color> color = getColor(data);
 	int ms = get32BitInt(data);
+	bool override = data.get();
 
 	AbstractLEDStrip * ledStrip = controller.getLEDStrip(LEDStripID);
 	if (ledStrip != nullptr) {
-		ledStrip->persistColor(color, ms);
+		ledStrip->persistColor(color, ms, override);
 	} else {
 		
 		Serial.print("Could not find LED strip ");

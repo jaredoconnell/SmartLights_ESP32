@@ -8,25 +8,6 @@ BasicIRController::BasicIRController(Controller& controller)
 {
 }
 
-AbstractLEDStrip * BasicIRController::getLEDStripAtIndex() {
-    AbstractLEDStrip * strip = nullptr;
-    if (selectedIndex < controller.getLedStrips()->size()) {
-        auto itr = controller.getLedStrips()->begin();
-        for (int i = 0; i < selectedIndex; i++) {
-            itr++;
-        }
-        strip = itr->second;
-    } else {
-        int numIter = selectedIndex - controller.getLedStrips()->size();
-        auto itr = controller.getLedStripGroups()->begin();
-        for (int i = 0; i < numIter; i++) {
-            itr++;
-        }
-        strip = itr->second;
-    }
-    return strip;
-}
-
 void BasicIRController::onCode(REMOTE_CODE code, int ticks) {
     int val = getIntVal(code);
     if (val != -1) {

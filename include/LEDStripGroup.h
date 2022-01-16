@@ -49,7 +49,7 @@ public:
 	 * Calling this again with a different color, or changing the
 	 * color sequence will overwrite this.
 	 */
-	virtual void persistColor(std::shared_ptr<Color> color, int seconds);
+	virtual void persistColor(std::shared_ptr<Color> color, int seconds, bool override);
 
     const std::vector<std::string>& getLEDStripIDs();
 };

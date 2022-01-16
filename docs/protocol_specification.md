@@ -241,6 +241,7 @@ Data:
 | 0 | 37 Bytes | The LED Strip or Group ID |
 | 2 | Three bytes | The Color |
 | 5 | Four bytes | The number of ms |
+| 9 | One byte | Override power state (makes it turn on while the strip is off) |
 
 Sets the color for the LED strip.
 The color will last the specified number of milliseconds seconds, indefinitely if 0, except will change if the color sequence is set for the LED strip.

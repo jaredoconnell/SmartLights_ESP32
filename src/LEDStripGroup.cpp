@@ -14,11 +14,11 @@ LEDStripGroup::LEDStripGroup(Controller& controller, std::string id,
 {}
 
 
-void LEDStripGroup::persistColor(std::shared_ptr<Color> color, int seconds) {
+void LEDStripGroup::persistColor(std::shared_ptr<Color> color, int seconds, bool override) {
 	for (std::string stripID : stripIDs) {
 		AbstractLEDStrip * strip = controller.getLEDStrip(stripID);
 		if (strip) {
-			strip->persistColor(color, seconds);
+			strip->persistColor(color, seconds, override);
 		} else {
 			Serial.println("Strip not found in persistColor.");
 		}

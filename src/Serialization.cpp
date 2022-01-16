@@ -129,7 +129,7 @@ LEDStrip * getLEDStrip(std::istream& data, Controller& controller) {
 
 	strip->setOnState(isOn);
 	if (isTemporaryColorActive) {
-		strip->persistColor(temporaryColor, secondsLeftOfTempColor);
+		strip->persistColor(temporaryColor, secondsLeftOfTempColor, false);
 	}
 	strip->setCurrentBrightness(brightness);
 	

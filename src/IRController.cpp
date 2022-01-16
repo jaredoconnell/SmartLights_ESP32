@@ -50,7 +50,10 @@ void IRController::tick() {
             Serial.println("IR code too long. Edit IRremoteInt.h and increase RAW_BUFFER_LENGTH");
         } else {
             REMOTE_CODE code = getCode(IrReceiver.decodedIRData.command);
-            onCode(code, IrReceiver.decodedIRData.rawDataPtr->rawbuf[0]);
+            int ticks = IrReceiver.decodedIRData.rawDataPtr->rawbuf[0];
+            Serial.printf("Ticks %d\n", ticks);
+            onCode(code, ticks);
+            lastCode = code;
         }
         IrReceiver.resume();   
 	}
@@ -58,7 +61,7 @@ void IRController::tick() {
 
 void IRController::flashSelectedLEDStrip() {
     AbstractLEDStrip * strip = getLEDStripAtIndex();
-    strip->persistColor(std::make_shared<Color>(50, 50, 255), 100);
+    strip->persistColor(std::make_shared<Color>(50, 50, 255), 150, true);
     updateLEDStrip(strip);
 }
 

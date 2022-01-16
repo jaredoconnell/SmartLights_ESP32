@@ -43,7 +43,7 @@ void ScheduledChange::apply() {
         shouldTurnOff = false;
     }
     if (colorChanges()) {
-        ledStrip->persistColor(newColor, 0);
+        ledStrip->persistColor(newColor, 0, false);
         Serial.printf("Setting color to %s\n", newColor->toString().c_str());
         shouldTurnOff = false;
     }

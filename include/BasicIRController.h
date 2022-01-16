@@ -9,7 +9,6 @@ private:
     virtual void onCode(REMOTE_CODE code, int ticks);
     virtual REMOTE_CODE getCode(int code);
     int getIntVal(REMOTE_CODE code);
-    AbstractLEDStrip * getLEDStripAtIndex();
 public:
     BasicIRController(Controller& controller);
 

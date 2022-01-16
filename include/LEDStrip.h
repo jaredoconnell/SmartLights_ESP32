@@ -58,6 +58,7 @@ private:
 	std::shared_ptr<Color> persistentColor;
 	int currentBrightness = MAX_BRIGHTNESS;
 	bool isToggledOn = true;
+	bool isTempOverrideOn = false;
 	std::shared_ptr<ColorSequence> colorSequence;
 	int ticksLeftToPersist = -1;
 	bool isInCalibrationMode = false;
@@ -142,10 +143,13 @@ public:
 	 * Persists the selected color for the specified amount of seconds
 	 * Set to 0 to persist indefinitely.
 	 * 
+	 * Setting override to true will make the strip stay on until the
+	 * end of the persistence of this color.
+	 * 
 	 * Calling this again with a different color, or changing the
 	 * color sequence will overwrite this.
 	 */
-	virtual void persistColor(std::shared_ptr<Color> color, int seconds);
+	virtual void persistColor(std::shared_ptr<Color> color, int seconds, bool override);
 
 	/**
 	 * Sets the color the LED strip currently displays, with the current
