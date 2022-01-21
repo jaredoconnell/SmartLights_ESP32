@@ -181,6 +181,8 @@ public:
 	 */
 	virtual std::shared_ptr<Color> getDisplayedColor();
 
+	virtual std::shared_ptr<ColorSequence> getColorSequence();
+
 	/**
 	 * Returns the number of ticks left for the temporary color.
 	 * -1 means no temporary color

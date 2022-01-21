@@ -90,6 +90,12 @@ public:
 	 */
 	virtual std::shared_ptr<Color> getDisplayedColor() = 0;
 
+
+	/**
+	 * Returns the current ColorSequence, or an empty ptr or none if not consistent.
+	 */
+	virtual std::shared_ptr<ColorSequence> getColorSequence() = 0;
+
 	/**
 	 * Returns the number of ms left for the temporary color.
 	 * -1 means no temporary color

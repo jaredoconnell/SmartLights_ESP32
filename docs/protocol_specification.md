@@ -289,6 +289,14 @@ Data:
 | --- | --- | --- |
 | 0 | 37 Bytes	| The Color Sequence ID |
 
+Packet name: **Associate ColorSequence to Button** \
+Packet ID: 26 \
+Data:
+| Index | Size | Data Details |
+| --- | --- | --- |
+| 0 | 37 Byte	| The Color Sequence ID |
+| 37 | One Byte | The ID of the DIY button (1-6) |
+
 ---
 ### From ESP32 to phone:
 

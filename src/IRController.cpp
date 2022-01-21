@@ -4,6 +4,7 @@
 #include "LEDStrip.h"
 #include "LEDStripGroup.h"
 #include "packets/sendable_packets/SendablePackets.h"
+#include "ColorSequence.h"
 
 decode_results results;
 
@@ -51,7 +52,11 @@ void IRController::tick() {
         } else {
             REMOTE_CODE code = getCode(IrReceiver.decodedIRData.command);
             int ticks = IrReceiver.decodedIRData.rawDataPtr->rawbuf[0];
-            Serial.printf("Ticks %d\n", ticks);
+            if (code == lastCode && ticks < 3000)
+                timesPressed++;
+            else
+                timesPressed = 1;
+            Serial.printf("Ticks %d, times pressed: %d\n", ticks, timesPressed);
             onCode(code, ticks);
             lastCode = code;
         }
@@ -114,10 +119,14 @@ void IRController::adjustColor(int diffR, int diffG, int diffB) {
     AbstractLEDStrip * strip = getLEDStripAtIndex();
     int msLeft = strip->getMsLeftForTempColor();
     std::shared_ptr<Color> color = strip->getDisplayedColor();
-    if (msLeft == -1 || !color) {
+    if (msLeft == -1 || !color || (strip->getColorSequence() && strip->getColorSequence()->getColors().size() > 1)) {
         // Red flash to show that it's not supported.
         strip->persistColor(std::make_shared<Color>(255, 0, 0), 500, true);
         return;
+    }
+
+    if (strip->getColorSequence()) { // Is a color sequence with one color
+        color = strip->getColorSequence()->getColors()[0];
     }
     // TODO: Support color sequences with 1 color
     
@@ -139,15 +148,81 @@ void IRController::adjustColor(int diffR, int diffG, int diffB) {
 
     std::shared_ptr<Color> newColor = std::make_shared<Color>(newRed, newGreen, newBlue);
 
-    strip->persistColor(newColor, msLeft, false);
+    if (strip->getColorSequence()) {
+        strip->getColorSequence()->getColors()[0] = newColor;
+        updateColorSequence(strip->getColorSequence());
+    } else {
+        strip->persistColor(newColor, msLeft, false);
+        updateLEDStrip(strip, true);
+    }
+}
 
-
-    updateLEDStrip(strip, true);
+void IRController::adjustSpeed(double factor) {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    std::shared_ptr<ColorSequence> colorSequence = strip->getColorSequence();
+    if (colorSequence && colorSequence->getColors().size() > 1) {
+        int newTransitionTime = static_cast<int>(colorSequence->getTransitionTime() * factor);
+        int newSustainTime = static_cast<int>(colorSequence->getSustainTime() * factor);
+        if (colorSequence->getTransitionTime() == newTransitionTime && newTransitionTime > 0) {
+            if (factor > 0)
+                newTransitionTime++;
+            else
+                newTransitionTime--;
+        }
+        if (colorSequence->getSustainTime() == newSustainTime && newSustainTime > 0) {
+            if (factor > 0)
+                newSustainTime++;
+            else
+                newSustainTime--;
+        }
+        if (newTransitionTime != 0)
+            colorSequence->setTransitionTime(newTransitionTime);
+        if (newSustainTime != 0)
+            colorSequence->setSustainTime(newSustainTime);
+        updateColorSequence(colorSequence);
+    } else {
+        strip->persistColor(std::make_shared<Color>(255, 0, 0), 500, true);
+    }
 }
 
 void IRController::updateLEDStrip(AbstractLEDStrip *, bool hasNewColor) {
     if (controller.deviceIsConnected()) {
         AbstractLEDStrip * strip = getLEDStripAtIndex();
         controller.queuePacket(new UpdateLEDStripPacket(controller, strip, hasNewColor));
+    }
+}
+
+void IRController::updateColorSequence(std::shared_ptr<ColorSequence> cs) {
+    if (controller.deviceIsConnected()) {
+        controller.queuePacket(new SendColorSequenceDataPacket(controller, cs));
+    }
+}
+
+void IRController::removeColorSequenceDIYAssociation(std::shared_ptr<ColorSequence> colorSequence) {
+    auto itr = diyButtonColorSequences.begin();
+    while (itr != diyButtonColorSequences.end()) {
+        if (itr->second->getID().compare(colorSequence->getID()) == 0)
+            diyButtonColorSequences.erase(itr);
+        itr++;
+    }
+}
+
+void IRController::associateColorSequenceToDIY(std::shared_ptr<ColorSequence> colorSequence, int diyNum) {
+    diyButtonColorSequences[diyNum] = colorSequence;
+}
+
+void IRController::onDIYPress(int diyNum, bool longPress) {
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+
+    if (longPress) {
+        strip->persistColor(std::make_shared<Color>(0, 255, 40), 300, true);
+
+    } else {
+        auto findResult = diyButtonColorSequences.find(diyNum);
+        if (findResult == diyButtonColorSequences.end()) {
+            strip->persistColor(std::make_shared<Color>(255, 0, 0), 300, true);
+        } else {
+            strip->setColorSequence(findResult->second);
+        }
     }
 }

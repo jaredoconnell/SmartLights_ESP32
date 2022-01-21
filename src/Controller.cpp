@@ -52,6 +52,7 @@ Controller::Controller() {
 	packets[23] = new SetLEDStripCalibrationMode(*this);
 	packets[24] = new SetLEDStripCalibrationValue(*this);
 	packets[25] = new DeleteColorSequencePacket(*this);
+	packets[26] = new AssociateColorSequenceToButton(*this);
 }
 
 
@@ -194,6 +195,7 @@ void Controller::deleteColorSequence(std::shared_ptr<ColorSequence> seq) {
 			strip.second->setColorSequence(nullptr);
 		}
 	}
+	irController->removeColorSequenceDIYAssociation(seq);
 
 	// Now remove from map
 	colorSequences.erase(seq->getID());
@@ -352,6 +354,10 @@ void Controller::sendScheduledChanges() {
 
 void Controller::setIRController(IRController* irController) {
 	this->irController = irController;
+}
+
+IRController* Controller::getIRController() {
+	return irController;
 }
 
 void Controller::sendSettings() {

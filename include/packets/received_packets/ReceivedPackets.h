@@ -155,4 +155,13 @@ class DeleteColorSequencePacket : public ReceivedPacket {
 		virtual void parse(std::istream &);
 };
 
+
+class AssociateColorSequenceToButton : public ReceivedPacket {
+	private:
+		Controller & controller;
+	public:
+		AssociateColorSequenceToButton(Controller & controller);
+		virtual void parse(std::istream &);
+};
+
 #endif

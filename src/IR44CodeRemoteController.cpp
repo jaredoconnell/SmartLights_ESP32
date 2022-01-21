@@ -51,8 +51,20 @@ void IR44CodeRemoteController::onCode(REMOTE_CODE code, int ticks) {
             adjustColor(0, 1, 0);
         } else if (code == REMOTE_CODE::BLUE_DOWN) {
             adjustColor(0, 0, -1);
+        } else if (code == REMOTE_CODE::QUICK) {
+            adjustSpeed(0.9);
+        } else if (code == REMOTE_CODE::SLOW) {
+            adjustSpeed(1.1);
         } else if (code == REMOTE_CODE::BLUE_UP) {
             adjustColor(0, 0, 1);
+        } else if (getDiyIndex(code) != -1) {
+            if (ticks > 3000) {
+                onDIYPress(getDiyIndex(code), false);
+            } else {
+                if (timesPressed == 5) {
+                    onDIYPress(getDiyIndex(code), true);
+                }
+            }
         }
     }
 }
@@ -155,6 +167,25 @@ bool IR44CodeRemoteController::isColorButton(REMOTE_CODE code) {
             return true;
         default:
             return false;
+    }
+}
+
+int IR44CodeRemoteController::getDiyIndex(REMOTE_CODE code) {
+    switch (code) {
+        case REMOTE_CODE::DIY1:
+            return 1;
+        case REMOTE_CODE::DIY2:
+            return 2;
+        case REMOTE_CODE::DIY3:
+            return 3;
+        case REMOTE_CODE::DIY4:
+            return 4;
+        case REMOTE_CODE::DIY5:
+            return 5;
+        case REMOTE_CODE::DIY6:
+            return 6;
+        default:
+            return -1;
     }
 }
 

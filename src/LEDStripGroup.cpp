@@ -96,6 +96,21 @@ std::shared_ptr<Color> LEDStripGroup::getDisplayedColor() {
 	return color;
 }
 
+std::shared_ptr<ColorSequence> LEDStripGroup::getColorSequence() {
+	std::shared_ptr<ColorSequence> colorSequence;
+	for (std::string stripID : stripIDs) {
+		AbstractLEDStrip * strip = controller.getLEDStrip(stripID);
+		if (!colorSequence) {
+			colorSequence = strip->getColorSequence();
+		} else {
+			if (colorSequence.get() != strip->getColorSequence().get()) {
+				return nullptr;
+			}
+		}
+	}
+	return colorSequence;
+}
+
 int LEDStripGroup::getMsLeftForTempColor() {
 	int result = -3;
 	for (std::string stripID : stripIDs) {

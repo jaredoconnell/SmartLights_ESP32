@@ -39,8 +39,10 @@ class SendLEDStripDataPacket : public SendablePacket {
 class SendColorSequenceDataPacket : public SendablePacket {
 	private:
 		int offset, quantity;
+		std::shared_ptr<ColorSequence> colorSequence; // for a single color sequence update.
 	public:
 		SendColorSequenceDataPacket(Controller & controller, int offset, int quantity);
+		SendColorSequenceDataPacket(Controller & controller, std::shared_ptr<ColorSequence>);
 		virtual std::string getData();
 };
 class SendSettingsPacket : public SendablePacket {

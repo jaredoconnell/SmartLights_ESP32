@@ -65,23 +65,39 @@ SendColorSequenceDataPacket::SendColorSequenceDataPacket(Controller & controller
 	: SendablePacket(controller), offset(offset), quantity(quantity)
 {}
 
+SendColorSequenceDataPacket::SendColorSequenceDataPacket(Controller & controller, std::shared_ptr<ColorSequence> cs)
+	: SendablePacket(controller), offset(0), quantity(1), colorSequence(cs)
+{}
+
 std::string SendColorSequenceDataPacket::getData() {
 	std::string output = "";
 	// Packet ID
 	output += static_cast<char>(251);
-	
-	auto colorSequences = controller.getColorSequences();
-	output += shortToStr(colorSequences.size()); // first, the total number of LED strips
-	output += shortToStr(offset); // second, the offset for the packet
-	auto itr = colorSequences.cbegin();
-	std::advance(itr, offset);
 	int actualQuantity = 0;
 	std::string componentsStr = "";
-	for (int i = 0; i < quantity && itr != colorSequences.cend(); i++) {
-		std::shared_ptr<ColorSequence> colorSequence = (* itr++).second;
-		componentsStr += colorSequenceToStr(colorSequence);
+
+	if (colorSequence) {
+		// Single one
 		actualQuantity++;
+		output += shortToStr(1); // first, the total number of LED strips
+		output += shortToStr(0); // second, the offset for the packet
+		componentsStr += colorSequenceToStr(colorSequence);
+
+
+	} else {
+		// Any number from the controller's storage
+		auto colorSequences = controller.getColorSequences();
+		output += shortToStr(colorSequences.size()); // first, the total number of LED strips
+		output += shortToStr(offset); // second, the offset for the packet
+		auto itr = colorSequences.cbegin();
+		std::advance(itr, offset);
+		for (int i = 0; i < quantity && itr != colorSequences.cend(); i++) {
+			std::shared_ptr<ColorSequence> curColorSequence = (* itr++).second;
+			componentsStr += colorSequenceToStr(curColorSequence);
+			actualQuantity++;
+		}
 	}
+		
 	output += static_cast<char>(actualQuantity); // third, the quantity sent in this packet
 	output += componentsStr;
 	

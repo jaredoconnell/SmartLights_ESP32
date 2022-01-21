@@ -10,6 +10,10 @@ class ColorSequence {
 private:
 	std::string id;
 	std::string name;
+	// For aligning cycles
+	int lastFrame = 0;
+	int offset = 0;
+
 	// Times are in frames.
 	int sustainTime;
 	int transitionTime;
@@ -28,10 +32,14 @@ public:
 	void updateCurrentColor(int frames);
 	std::shared_ptr<Color> getCurrentColor();
 
+	void setTransitionTime(int);
+	void setSustainTime(int);
+	void recalculateCycleTime();
+
 	int getSustainTime();
 	int getTransitionTime();
 	int getTransitionTypeID();
-	const std::vector<std::shared_ptr<Color>>& getColors();
+	std::vector<std::shared_ptr<Color>>& getColors();
 
 	ColorSequence& operator=(const ColorSequence& other);
 };

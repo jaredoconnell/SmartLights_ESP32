@@ -8,6 +8,7 @@
 #include "Setting.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "Serialization.h"
+#include "IRController.h"
 
 #include <sys/time.h>
 
@@ -322,6 +323,30 @@ void DeleteColorSequencePacket::parse(std::istream &data) {
 		Serial.println("Color Sequence cleared.");
 	} else {
 		Serial.println("Color Sequence not found. Could not delete.");
+	}
+}
+
+
+// ---------------------------------------------------- //
+
+AssociateColorSequenceToButton::AssociateColorSequenceToButton(Controller & controller)
+	: controller(controller)
+{}
+void AssociateColorSequenceToButton::parse(std::istream &data) {
+	Serial.println("Got packet AssociateColorSequenceToButton");
+	std::string colorSequenceID = getString(data);
+	std::shared_ptr<ColorSequence> colorSequence = controller.getColorSequence(colorSequenceID);
+	int buttonID = data.get();
+	
+	if (colorSequence) {
+		if (buttonID >= 1 && buttonID <= 6) {
+			Serial.printf("Associating %s to DIY%d.\n", colorSequence->getName().c_str(), buttonID);
+			controller.getIRController()->associateColorSequenceToDIY(colorSequence, buttonID);
+		} else {
+			Serial.println("Button ID out of bounds. It should be between 1 and 6 (inclusive)");
+		}
+	} else {
+		Serial.println("Color Sequence not found. Could not associate.");
 	}
 }
 

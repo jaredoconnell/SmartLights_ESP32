@@ -13,6 +13,7 @@ private:
     virtual void onCode(REMOTE_CODE code, int ticks);
     virtual REMOTE_CODE getCode(int code);
     bool isColorButton(REMOTE_CODE code);
+    int getDiyIndex(REMOTE_CODE code);
     void setColorFromCode(AbstractLEDStrip * strip, REMOTE_CODE code, int ticks);
 public:
     IR44CodeRemoteController(Controller& controller, int defaultLEDStripIndex);

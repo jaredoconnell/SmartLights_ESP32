@@ -238,6 +238,10 @@ std::shared_ptr<Color> LEDStrip::getDisplayedColor() {
 	return this->currentColor;
 }
 
+std::shared_ptr<ColorSequence> LEDStrip::getColorSequence() {
+	return this->colorSequence;
+}
+
 int LEDStrip::getTicksLeftForTempColor() {
 	return this->ticksLeftToPersist;
 }

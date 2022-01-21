@@ -134,6 +134,7 @@ public:
 
 	// IR Stuff
 	void setIRController(IRController*);
+	IRController* getIRController();
 
 	// Bluetooth stuff
 	// BLE lib needed functions.

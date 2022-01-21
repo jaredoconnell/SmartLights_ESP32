@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "Controller.h"
 
+class ColorSequence;
+
 enum class REMOTE_CODE {
     // Basic
     ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, ZERO,
@@ -30,6 +32,8 @@ protected:
     Controller& controller;
     int selectedIndex = 0;
     REMOTE_CODE lastCode = REMOTE_CODE::UNKNOWN;
+    int timesPressed = 0; // Num times the same button has been pressed
+    std::map<int, std::shared_ptr<ColorSequence>> diyButtonColorSequences;
 
     virtual void onCode(REMOTE_CODE code, int ticks) = 0;
     virtual REMOTE_CODE getCode(int code) = 0;
@@ -39,14 +43,20 @@ protected:
     void togglePower();
     void brightnessUp();
     void brightnessDown();
+    void onDIYPress(int diyNum, bool longPress);
     void adjustColor(int diffR, int diffG, int diffB);
+    void adjustSpeed(double factor);
 
     void updateLEDStrip(AbstractLEDStrip *, bool hasNewColor);
+    void updateColorSequence(std::shared_ptr<ColorSequence>);
 public:
     IRController(Controller& controller);
 
     virtual void setup();
     virtual void tick();
+
+    void removeColorSequenceDIYAssociation(std::shared_ptr<ColorSequence>);
+    void associateColorSequenceToDIY(std::shared_ptr<ColorSequence>, int diyNum);
 
 };
 
