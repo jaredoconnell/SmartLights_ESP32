@@ -2,6 +2,7 @@
 #include "AbstractLEDStrip.h"
 #include "LEDStrip.h"
 #include "LEDStripGroup.h"
+#include "ColorSequence.h"
 
 IR44CodeRemoteController::IR44CodeRemoteController(Controller& controller, int defaultLEDStripIndex)
     : IRController(controller)
@@ -15,6 +16,20 @@ IR44CodeRemoteController::IR44CodeRemoteController(Controller& controller, int d
     whites.emplace(whites.end(), 3500);
     whites.emplace(whites.end(), 3000);
     whites.emplace(whites.end(), 2500);
+    threeColor.emplace(threeColor.end(), std::make_shared<Color>(255, 0, 0));
+    threeColor.emplace(threeColor.end(), std::make_shared<Color>(0, 255, 0));
+    threeColor.emplace(threeColor.end(), std::make_shared<Color>(0, 0, 255));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(255, 0, 0));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(0, 255, 0));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(0, 0, 255));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(255, 255, 0));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(255, 0, 255));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(0, 255, 255));
+    sevenColor.emplace(sevenColor.end(), std::make_shared<Color>(255, 255, 255));
+    jump3UUID = "5fd055a4-eb3c-4674-b1fc-b952068323b4";
+    jump7UUID = "dc6f5fbc-ed72-4108-b973-1203b02238aa";
+    fade3UUID = "e9768998-2895-46a1-a084-b0bbc15753cb";
+    fade7UUID = "20c82579-a244-4008-99f4-4fb53f974a76";
 }
 
 void IR44CodeRemoteController::onCode(REMOTE_CODE code, int ticks) {
@@ -65,7 +80,33 @@ void IR44CodeRemoteController::onCode(REMOTE_CODE code, int ticks) {
                     onDIYPress(getDiyIndex(code), true);
                 }
             }
+        } else if (code == REMOTE_CODE::JUMP3) {
+            genOrSetColorSequence(jump3UUID, threeColor, 0, 60, "JUMP3");
+        } else if (code == REMOTE_CODE::FADE3) {
+            genOrSetColorSequence(fade3UUID, threeColor, 60, 0, "FADE3");
+        } else if (code == REMOTE_CODE::JUMP7) {
+            genOrSetColorSequence(jump7UUID, sevenColor, 0, 60, "JUMP7");
+        } else if (code == REMOTE_CODE::FADE7) {
+            genOrSetColorSequence(fade7UUID, sevenColor, 60, 0, "FADE7");
         }
+    }
+}
+
+void IR44CodeRemoteController::genOrSetColorSequence(std::string UUID, std::vector<std::shared_ptr<Color>> colors,
+        int fadeTime, int sustainTime, std::string name)
+{
+    AbstractLEDStrip * strip = getLEDStripAtIndex();
+    std::shared_ptr<ColorSequence> foundCS = controller.getColorSequence(UUID);
+    if (foundCS)  {
+        strip->setColorSequence(foundCS);
+        updateColorSequence(foundCS);
+    } else {
+        ColorSequence * newColorSequenceRaw = new ColorSequence(UUID, colors, sustainTime, fadeTime, 0, name);
+        controller.addColorSequence(newColorSequenceRaw);
+        std::shared_ptr<ColorSequence> newColorSequence = controller.getColorSequence(UUID);
+
+        strip->setColorSequence(newColorSequence);
+        updateColorSequence(newColorSequence);
     }
 }
 
@@ -89,7 +130,7 @@ void IR44CodeRemoteController::setColorFromCode(AbstractLEDStrip * strip, REMOTE
             strip->persistColor(std::make_shared<Color>(whites[whiteIndex]), 0, false);
             break;
         case REMOTE_CODE::RED2:
-            strip->persistColor(std::make_shared<Color>(255, 50, 0), 0, false);
+            strip->persistColor(std::make_shared<Color>(255, 30, 0), 0, false);
             break;
         case REMOTE_CODE::GREEN2:
             strip->persistColor(std::make_shared<Color>(80, 255, 0), 0, false);
@@ -101,7 +142,7 @@ void IR44CodeRemoteController::setColorFromCode(AbstractLEDStrip * strip, REMOTE
             strip->persistColor(std::make_shared<Color>(255, 163, 250), 0, false);
             break;
         case REMOTE_CODE::RED3:
-            strip->persistColor(std::make_shared<Color>(255, 100, 0), 0, false);
+            strip->persistColor(std::make_shared<Color>(255, 80, 0), 0, false);
             break;
         case REMOTE_CODE::GREEN3:
             strip->persistColor(std::make_shared<Color>(0, 255, 128), 0, false);

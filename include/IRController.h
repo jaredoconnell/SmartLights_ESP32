@@ -29,6 +29,7 @@ const uint16_t IR_RECEIVE_PIN = 36;
 
 class IRController {
 protected:
+    int randSum = 7;
     Controller& controller;
     int selectedIndex = 0;
     REMOTE_CODE lastCode = REMOTE_CODE::UNKNOWN;

@@ -1,10 +1,12 @@
 #include "IRController.h"
 #include <IRremote.h>
+#include <string>
 #include "AbstractLEDStrip.h"
 #include "LEDStrip.h"
 #include "LEDStripGroup.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "ColorSequence.h"
+#include "Utils.h"
 
 decode_results results;
 
@@ -39,14 +41,15 @@ void IRController::setup() {
 
 void IRController::tick() {
     if (IrReceiver.decode()) {
+        randSum += IrReceiver.decodedIRData.decodedRawData;
 		// Check if the buffer overflowed
-        Serial.printf("Command: %X\n", IrReceiver.decodedIRData.command);
-        Serial.printf("Protocol: %X\n", IrReceiver.decodedIRData.protocol);
-        Serial.printf("Address: %X\n", IrReceiver.decodedIRData.address);
-        Serial.printf("Extra: %X\n", IrReceiver.decodedIRData.extra);
-        Serial.printf("Flags: %X\n", IrReceiver.decodedIRData.flags);
-        Serial.printf("Num Bits: %d\n", IrReceiver.decodedIRData.numberOfBits);
-        Serial.printf("Raw: %X\n", IrReceiver.decodedIRData.decodedRawData);
+        // Serial.printf("Command: %X\n", IrReceiver.decodedIRData.command);
+        // Serial.printf("Protocol: %X\n", IrReceiver.decodedIRData.protocol);
+        // Serial.printf("Address: %X\n", IrReceiver.decodedIRData.address);
+        // Serial.printf("Extra: %X\n", IrReceiver.decodedIRData.extra);
+        // Serial.printf("Flags: %X\n", IrReceiver.decodedIRData.flags);
+        // Serial.printf("Num Bits: %d\n", IrReceiver.decodedIRData.numberOfBits);
+        // Serial.printf("Raw: %X\n", IrReceiver.decodedIRData.decodedRawData);
         if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_WAS_OVERFLOW) {
             Serial.println("IR code too long. Edit IRremoteInt.h and increase RAW_BUFFER_LENGTH");
         } else {
@@ -215,8 +218,25 @@ void IRController::onDIYPress(int diyNum, bool longPress) {
     AbstractLEDStrip * strip = getLEDStripAtIndex();
 
     if (longPress) {
+        std::vector<std::shared_ptr<Color>> colors;
+        colors.push_back(std::make_shared<Color>(strip->getDisplayedColor().get()));
+
         strip->persistColor(std::make_shared<Color>(0, 255, 40), 300, true);
 
+        uuid::seed(randSum);
+
+        ColorSequence * newColorSequenceRaw = new ColorSequence(
+            uuid::generate_uuid_v4(), colors, 0, 0, 0, std::string("DIY").append(1, 48 /*ascii*/+ diyNum)
+        );
+
+        controller.addColorSequence(newColorSequenceRaw);
+        std::shared_ptr<ColorSequence> newColorSequence = controller.getColorSequence(newColorSequenceRaw->getID());
+
+        strip->setColorSequence(newColorSequence);
+
+        associateColorSequenceToDIY(newColorSequence, diyNum);
+
+        updateColorSequence(newColorSequence);
     } else {
         auto findResult = diyButtonColorSequences.find(diyNum);
         if (findResult == diyButtonColorSequences.end()) {
