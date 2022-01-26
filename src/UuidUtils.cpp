@@ -1,11 +1,11 @@
 #include <random>
 #include <sstream>
 
-#include "Utils.h"
+#include "UuidUtils.h"
 
 // Source https://stackoverflow.com/questions/24365331/how-can-i-generate-uuid-in-c-without-using-boost-library
 
-namespace uuid {
+namespace uuid_utils {
     static std::random_device              rd;
     static std::mt19937                    gen(rd());
     static std::uniform_int_distribution<> dis(0, 15);

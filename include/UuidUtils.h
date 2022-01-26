@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace uuid {
+namespace uuid_utils {
     void seed(int seed);
     std::string generate_uuid_v4();
 }

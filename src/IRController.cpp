@@ -6,7 +6,7 @@
 #include "LEDStripGroup.h"
 #include "packets/sendable_packets/SendablePackets.h"
 #include "ColorSequence.h"
-#include "Utils.h"
+#include "UuidUtils.h"
 
 decode_results results;
 
@@ -223,10 +223,10 @@ void IRController::onDIYPress(int diyNum, bool longPress) {
 
         strip->persistColor(std::make_shared<Color>(0, 255, 40), 300, true);
 
-        uuid::seed(randSum);
+        uuid_utils::seed(randSum);
 
         ColorSequence * newColorSequenceRaw = new ColorSequence(
-            uuid::generate_uuid_v4(), colors, 0, 0, 0, std::string("DIY").append(1, 48 /*ascii*/+ diyNum)
+            uuid_utils::generate_uuid_v4(), colors, 0, 0, 0, std::string("DIY").append(1, 48 /*ascii*/+ diyNum)
         );
 
         controller.addColorSequence(newColorSequenceRaw);
